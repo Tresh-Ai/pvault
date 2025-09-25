@@ -151,7 +151,7 @@ export function ProjectsList({ onProjectSelect }: ProjectsList) {
         <DialogTrigger asChild>
           <FloatingActionButton onClick={() => setIsCreateDialogOpen(true)} />
         </DialogTrigger>
-        <DialogContent className="sm:max-w-lg w-full sm:rounded-lg sm:top-1/2 sm:-translate-y-1/2 fixed bottom-0 sm:bottom-auto sm:left-1/2 sm:-translate-x-1/2">
+        <DialogContent className="w-[90vw] max-w-lg rounded-lg">
           <DialogHeader>
             <DialogTitle>Create New Project</DialogTitle>
           </DialogHeader>
