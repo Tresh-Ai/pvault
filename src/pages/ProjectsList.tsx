@@ -104,7 +104,7 @@ export function ProjectsList({ onProjectSelect }: ProjectsList) {
               <p className="text-sm text-muted-foreground">Organize your AI prompts & tools</p>
             </div>
             <Button variant="ghost" size="sm">
-              <Settings className="h-5 w-5" />
+              <Settings className="h-5 w-5 hidden" />
             </Button>
           </div>
           
