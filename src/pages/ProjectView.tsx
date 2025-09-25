@@ -336,7 +336,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
           setPromptForm({ title: "", content: "", category: "", tags: "", isFavorite: false });
         }}
       >
-        <DialogContent className="mx-4 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="mx-4 w-[90vw] max-w-lg rounded-lg max-h-[90vh] overflow-y-auto fixed bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
           <DialogHeader>
             <DialogTitle>{editingPrompt ? "Edit Prompt" : "Create New Prompt"}</DialogTitle>
           </DialogHeader>
