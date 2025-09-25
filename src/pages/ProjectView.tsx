@@ -413,7 +413,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
           setToolForm({ name: "", url: "", category: "", notes: "", tags: "" });
         }}
       >
-        <DialogContent className="mx-4">
+        <DialogContent className="w-[90vw] max-w-lg rounded-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingTool ? "Edit Tool" : "Create New Tool"}</DialogTitle>
           </DialogHeader>
