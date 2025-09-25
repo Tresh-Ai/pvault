@@ -336,7 +336,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
           setPromptForm({ title: "", content: "", category: "", tags: "", isFavorite: false });
         }}
       >
-        <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 rounded-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="mx-4 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingPrompt ? "Edit Prompt" : "Create New Prompt"}</DialogTitle>
           </DialogHeader>
@@ -413,7 +413,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
           setToolForm({ name: "", url: "", category: "", notes: "", tags: "" });
         }}
       >
-        <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 rounded-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="mx-4 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingTool ? "Edit Tool" : "Create New Tool"}</DialogTitle>
           </DialogHeader>
