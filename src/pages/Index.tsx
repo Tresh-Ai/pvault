@@ -1,12 +1,21 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { Project } from "@/lib/database";
+import { ProjectsList } from "./ProjectsList";
+import { ProjectView } from "./ProjectView";
 
 const Index = () => {
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      {selectedProject ? (
+        <ProjectView 
+          project={selectedProject} 
+          onBack={() => setSelectedProject(null)} 
+        />
+      ) : (
+        <ProjectsList onProjectSelect={setSelectedProject} />
+      )}
     </div>
   );
 };
