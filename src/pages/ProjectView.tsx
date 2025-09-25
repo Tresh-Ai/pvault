@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Project, Prompt, Tool, db, dbHelpers } from "@/lib/database";
+import { Project, Prompt, Tool, dbHelpers } from "@/lib/database";
 import { PromptCard } from "@/components/prompt-card";
 import { ToolCard } from "@/components/tool-card";
 import { SearchInput } from "@/components/ui/search-input";
@@ -59,8 +59,8 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
   const loadData = async () => {
     try {
       const [projectPrompts, projectTools] = await Promise.all([
-        db.prompts.where('projectId').equals(project.id).toArray(),
-        db.tools.where('projectId').equals(project.id).toArray(),
+        dbHelpers.getProjectPrompts(project.id),
+        dbHelpers.getProjectTools(project.id),
       ]);
       setPrompts(projectPrompts);
       setTools(projectTools);
@@ -167,7 +167,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
 
   const handleDeletePrompt = async (prompt: Prompt) => {
     try {
-      await db.prompts.delete(prompt.id);
+      await dbHelpers.deletePrompt(prompt.id);
       setPrompts(prev => prev.filter(p => p.id !== prompt.id));
       toast({
         title: "Prompt deleted",
@@ -184,7 +184,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
 
   const handleDeleteTool = async (tool: Tool) => {
     try {
-      await db.tools.delete(tool.id);
+      await dbHelpers.deleteTool(tool.id);
       setTools(prev => prev.filter(t => t.id !== tool.id));
       toast({
         title: "Tool deleted",

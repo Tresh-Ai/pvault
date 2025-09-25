@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Project, db, dbHelpers } from "@/lib/database";
+import { Project, dbHelpers } from "@/lib/database";
 import { ProjectCard } from "@/components/project-card";
 import { SearchInput } from "@/components/ui/search-input";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
@@ -31,15 +31,17 @@ export function ProjectsList({ onProjectSelect }: ProjectsList) {
 
   const loadProjects = async () => {
     try {
-      const allProjects = await db.projects.orderBy('updatedAt').reverse().toArray();
+      const allProjects = await dbHelpers.getAllProjects();
+      // Sort by updatedAt in reverse order
+      allProjects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       setProjects(allProjects);
       
       // Load counts for each project
       const counts: Record<string, { prompts: number; tools: number }> = {};
       for (const project of allProjects) {
-        const promptCount = await db.prompts.where('projectId').equals(project.id).count();
-        const toolCount = await db.tools.where('projectId').equals(project.id).count();
-        counts[project.id] = { prompts: promptCount, tools: toolCount };
+        const projectPrompts = await dbHelpers.getProjectPrompts(project.id);
+        const projectTools = await dbHelpers.getProjectTools(project.id);
+        counts[project.id] = { prompts: projectPrompts.length, tools: projectTools.length };
       }
       setProjectCounts(counts);
     } catch (error) {
