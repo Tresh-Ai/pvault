@@ -38,7 +38,7 @@ export function ProjectCard({ project, promptCount, toolCount, onClick, onDelete
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="opacity-60 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <MoreVertical className="h-4 w-4" />
