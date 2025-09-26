@@ -125,7 +125,7 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <img src="/icon-192.png" alt="PVault" className="w-8 h-8" />
+              <img src="/icon-192.png" alt="PVault" className="w-8 h-8 rounded-lg" />
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                   PVault
