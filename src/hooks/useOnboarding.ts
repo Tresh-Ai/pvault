@@ -25,11 +25,6 @@ export function useOnboarding() {
 
   const completeOnboarding = (theme: 'light' | 'dark' | 'system') => {
     localStorage.setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
-    
-    // Save theme to settings
-    const settings = { theme, sortPreference: 'mostRecent', protectWithPIN: false };
-    localStorage.setItem('pvault_settings', JSON.stringify([settings]));
-    
     setState(prev => ({ ...prev, isCompleted: true, selectedTheme: theme }));
   };
 

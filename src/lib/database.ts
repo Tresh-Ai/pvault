@@ -17,7 +17,6 @@ export interface Prompt {
   content: string;
   tags: string[];
   category: string;
-  format: 'text' | 'json';
   createdAt: Date;
   updatedAt: Date;
   lastUsedAt?: Date;
@@ -29,12 +28,10 @@ export interface Tool {
   id: string;
   projectId: string;
   name: string;
-  url?: string;
+  url: string;
   category: string;
   notes?: string;
   tags: string[];
-  usageCount: number;
-  lastUsedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -187,12 +184,11 @@ export const dbHelpers = {
   },
 
   // Tools
-  async createTool(data: Omit<Tool, 'id' | 'createdAt' | 'updatedAt' | 'usageCount' | 'lastUsedAt'>): Promise<Tool> {
+  async createTool(data: Omit<Tool, 'id' | 'createdAt' | 'updatedAt'>): Promise<Tool> {
     const now = new Date();
     const tool: Tool = {
       id: uuidv4(),
       ...data,
-      usageCount: 0,
       createdAt: now,
       updatedAt: now,
     };
@@ -200,17 +196,6 @@ export const dbHelpers = {
     tools.push(tool);
     storage.set(STORAGE_KEYS.TOOLS, tools);
     return tool;
-  },
-
-  async incrementToolUsage(id: string): Promise<void> {
-    const tools = storage.get<Tool>(STORAGE_KEYS.TOOLS);
-    const index = tools.findIndex(t => t.id === id);
-    if (index !== -1) {
-      tools[index].usageCount += 1;
-      tools[index].lastUsedAt = new Date();
-      tools[index].updatedAt = new Date();
-      storage.set(STORAGE_KEYS.TOOLS, tools);
-    }
   },
 
   async updateTool(id: string, data: Partial<Omit<Tool, 'id' | 'createdAt'>>): Promise<void> {

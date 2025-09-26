@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Prompt } from "@/lib/database";
-import { Copy, Heart, MoreVertical, Download } from "lucide-react";
+import { Copy, Heart, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 
@@ -35,35 +35,6 @@ export function PromptCard({
       toast({
         title: "Copy failed",
         description: "Unable to copy to clipboard.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleExport = () => {
-    try {
-      const content = prompt.format === 'json' ? JSON.stringify(JSON.parse(prompt.content), null, 2) : prompt.content;
-      const blob = new Blob([content], { 
-        type: prompt.format === 'json' ? 'application/json' : 'text/plain' 
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${prompt.title.replace(/[^a-zA-Z0-9]/g, '_')}.${prompt.format === 'json' ? 'json' : 'txt'}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      onIncrementUsage();
-      toast({
-        title: "Export complete",
-        description: `Prompt exported as ${prompt.format === 'json' ? 'JSON' : 'text'} file.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Export failed",
-        description: "Unable to export prompt.",
         variant: "destructive",
       });
     }
@@ -105,23 +76,17 @@ export function PromptCard({
         <div className="flex items-center justify-between">
           <div className="flex flex-wrap gap-1">
             <Badge variant="outline" className="text-xs">{prompt.category}</Badge>
-            <Badge variant="secondary" className="text-xs">{prompt.format}</Badge>
-            {prompt.tags.slice(0, 1).map((tag) => (
+            {prompt.tags.slice(0, 2).map((tag) => (
               <Badge key={tag} variant="secondary" className="text-xs">
                 {tag}
               </Badge>
             ))}
           </div>
           
-          <div className="flex gap-1">
-            <Button onClick={handleCopy} variant="outline" size="sm">
-              <Copy className="h-3 w-3 mr-1" />
-              Copy
-            </Button>
-            <Button onClick={handleExport} variant="outline" size="sm">
-              <Download className="h-3 w-3" />
-            </Button>
-          </div>
+          <Button onClick={handleCopy} variant="outline" size="sm">
+            <Copy className="h-3 w-3 mr-1" />
+            Copy
+          </Button>
         </div>
 
         <div className="text-xs text-muted-foreground flex justify-between">
