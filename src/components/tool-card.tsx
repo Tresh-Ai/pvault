@@ -9,9 +9,10 @@ interface ToolCardProps {
   tool: Tool;
   onEdit: () => void;
   onDelete: () => void;
+  onIncrementUsage: () => void;
 }
 
-export function ToolCard({ tool, onEdit, onDelete }: ToolCardProps) {
+export function ToolCard({ tool, onEdit, onDelete, onIncrementUsage }: ToolCardProps) {
   const handleOpenLink = () => {
     if (tool.url) {
       window.open(tool.url, '_blank');

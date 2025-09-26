@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { Project } from "@/lib/database";
 import { ProjectsList } from "./ProjectsList";
 import { ProjectView } from "./ProjectView";
+import { Settings } from "./Settings";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useOnboarding } from "@/hooks/useOnboarding";
 
 const Index = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const { state: onboardingState, completeOnboarding } = useOnboarding();
 
   // Apply theme to document
@@ -53,13 +55,18 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {selectedProject ? (
+      {showSettings ? (
+        <Settings onBack={() => setShowSettings(false)} />
+      ) : selectedProject ? (
         <ProjectView 
           project={selectedProject} 
           onBack={() => setSelectedProject(null)} 
         />
       ) : (
-        <ProjectsList onProjectSelect={setSelectedProject} />
+        <ProjectsList 
+          onProjectSelect={setSelectedProject}
+          onSettingsClick={() => setShowSettings(true)}
+        />
       )}
     </div>
   );

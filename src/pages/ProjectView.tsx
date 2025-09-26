@@ -37,6 +37,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
     title: "",
     content: "",
     category: "",
+    format: "text" as 'text' | 'json',
     tags: "",
     isFavorite: false,
   });
@@ -83,12 +84,13 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
         title: promptForm.title.trim(),
         content: promptForm.content.trim(),
         category: promptForm.category || "Other",
+        format: promptForm.format || "text",
         tags: promptForm.tags.split(',').map(tag => tag.trim()).filter(Boolean),
         isFavorite: promptForm.isFavorite,
       });
 
       setPrompts(prev => [prompt, ...prev]);
-      setPromptForm({ title: "", content: "", category: "", tags: "", isFavorite: false });
+      setPromptForm({ title: "", content: "", category: "", format: "text", tags: "", isFavorite: false });
       setIsCreatePromptOpen(false);
       
       toast({
@@ -113,13 +115,14 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
         title: promptForm.title.trim(),
         content: promptForm.content.trim(),
         category: promptForm.category || "Other",
+        format: promptForm.format || "text",
         tags: promptForm.tags.split(',').map(tag => tag.trim()).filter(Boolean),
         isFavorite: promptForm.isFavorite,
       });
 
       await loadData();
       setEditingPrompt(null);
-      setPromptForm({ title: "", content: "", category: "", tags: "", isFavorite: false });
+      setPromptForm({ title: "", content: "", category: "", format: "text", tags: "", isFavorite: false });
       
       toast({
         title: "Prompt updated",
@@ -205,6 +208,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
       title: prompt.title,
       content: prompt.content,
       category: prompt.category,
+      format: prompt.format || "text",
       tags: prompt.tags.join(', '),
       isFavorite: prompt.isFavorite,
     });
@@ -314,6 +318,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
                   tool={tool}
                   onEdit={() => startEditTool(tool)}
                   onDelete={() => handleDeleteTool(tool)}
+                  onIncrementUsage={() => dbHelpers.incrementToolUsage(tool.id).then(loadData)}
                 />
               ))}
             </div>
@@ -333,7 +338,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
         onOpenChange={() => {
           setIsCreatePromptOpen(false);
           setEditingPrompt(null);
-          setPromptForm({ title: "", content: "", category: "", tags: "", isFavorite: false });
+          setPromptForm({ title: "", content: "", category: "", format: "text", tags: "", isFavorite: false });
         }}
       >
         <DialogContent className="w-[90vw] max-w-lg rounded-lg">
@@ -376,6 +381,18 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
               </Select>
             </div>
             <div>
+              <Label htmlFor="prompt-format">Format</Label>
+              <Select value={promptForm.format || 'text'} onValueChange={(value) => setPromptForm(prev => ({ ...prev, format: value as 'text' | 'json' }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="json">JSON</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label htmlFor="prompt-tags">Tags (Optional)</Label>
               <Input
                 id="prompt-tags"
@@ -394,7 +411,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
                 onClick={() => {
                   setIsCreatePromptOpen(false);
                   setEditingPrompt(null);
-                  setPromptForm({ title: "", content: "", category: "", tags: "", isFavorite: false });
+                  setPromptForm({ title: "", content: "", category: "", format: "text", tags: "", isFavorite: false });
                 }}
               >
                 Cancel

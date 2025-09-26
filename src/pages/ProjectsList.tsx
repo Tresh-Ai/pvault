@@ -8,14 +8,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Settings, Plus } from "lucide-react";
+import { Settings, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import logo from "@/assets/logo.svg";
 
 interface ProjectsList {
   onProjectSelect: (project: Project) => void;
+  onSettingsClick: () => void;
 }
 
-export function ProjectsList({ onProjectSelect }: ProjectsList) {
+export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -85,6 +87,31 @@ export function ProjectsList({ onProjectSelect }: ProjectsList) {
     }
   };
 
+  const handleDeleteProject = async (projectId: string) => {
+    if (confirm('Are you sure you want to delete this project? This will also delete all prompts and tools in this project.')) {
+      try {
+        await dbHelpers.deleteProject(projectId);
+        setProjects(prev => prev.filter(p => p.id !== projectId));
+        setProjectCounts(prev => {
+          const updated = { ...prev };
+          delete updated[projectId];
+          return updated;
+        });
+        
+        toast({
+          title: "Project deleted",
+          description: "Project and all its contents have been deleted.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error deleting project",
+          description: "Unable to delete project.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -96,15 +123,18 @@ export function ProjectsList({ onProjectSelect }: ProjectsList) {
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                PVault
-              </h1>
-              <p className="text-sm text-muted-foreground">Organize your AI prompts & tools</p>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="PVault" className="w-8 h-8" />
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  PVault
+                </h1>
+                <p className="text-sm text-muted-foreground">Your AI memory, organized</p>
+              </div>
             </div>
-            <Button variant="ghost" size="sm">
-              <Settings className="h-5 w-5 hidden" />
+            <Button variant="ghost" size="sm" onClick={onSettingsClick}>
+              <Settings className="h-5 w-5" />
             </Button>
           </div>
           
@@ -140,6 +170,7 @@ export function ProjectsList({ onProjectSelect }: ProjectsList) {
                 promptCount={projectCounts[project.id]?.prompts || 0}
                 toolCount={projectCounts[project.id]?.tools || 0}
                 onClick={() => onProjectSelect(project)}
+                onDelete={() => handleDeleteProject(project.id)}
               />
             ))}
           </div>
