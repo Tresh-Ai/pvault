@@ -264,7 +264,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4 mt-[10px]">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="prompts" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
