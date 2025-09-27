@@ -70,11 +70,14 @@ export function PromptCard({
   };
 
   return (
-    <Card className="transition-all duration-200 hover:shadow-card bg-gradient-card border-border/50">
+    <Card 
+      className="transition-all duration-200 hover:shadow-card bg-gradient-card border-border/50 cursor-pointer" 
+      onClick={() => window.location.href = `/project/${prompt.projectId}/prompt/edit?promptId=${prompt.id}`}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <CardTitle className="text-base font-medium line-clamp-2">{prompt.title}</CardTitle>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
               size="sm"
@@ -90,9 +93,6 @@ export function PromptCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => window.location.href = `/project/${prompt.projectId}/prompt/edit?promptId=${prompt.id}`}>
-                  Edit
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={onDelete} className="text-destructive">
                   Delete
                 </DropdownMenuItem>
@@ -115,7 +115,7 @@ export function PromptCard({
             ))}
           </div>
           
-          <div className="flex gap-1">
+          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
             <Button onClick={handleCopy} variant="outline" size="sm">
               <Copy className="h-3 w-3 mr-1" />
               Copy

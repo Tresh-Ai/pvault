@@ -80,15 +80,17 @@ export function PromptEditor() {
     }
   }, [projectId, title, content, isEdit, promptId]);
 
-  // Debounced autosave
+  // Debounced autosave - increased delay and only when content exists
   useEffect(() => {
     if (autosaveTimer.current) {
       clearTimeout(autosaveTimer.current);
     }
     
-    autosaveTimer.current = setTimeout(() => {
-      triggerAutosave();
-    }, 2000);
+    if (title.trim() && content.trim()) {
+      autosaveTimer.current = setTimeout(() => {
+        triggerAutosave();
+      }, 3000); // Increased to 3 seconds for better UX
+    }
 
     return () => {
       if (autosaveTimer.current) {
@@ -97,20 +99,26 @@ export function PromptEditor() {
     };
   }, [title, content, triggerAutosave]);
 
-  // Extract tags from content using #hashtags
+  // Extract tags from the last line only using #hashtags
   const extractHashtags = (text: string): string[] => {
+    const lines = text.split('\n');
+    const lastLine = lines[lines.length - 1] || '';
     const hashtagRegex = /#(\w+)/g;
-    const matches = text.match(hashtagRegex) || [];
+    const matches = lastLine.match(hashtagRegex) || [];
     return [...new Set(matches.map(tag => tag.slice(1)))]; // Remove # and deduplicate
   };
 
-  // Update tags when content changes
+  // Update tags when content changes - debounced
   useEffect(() => {
-    const extractedTags = extractHashtags(content);
-    setTags(prevTags => {
-      const manualTags = prevTags.filter(tag => !extractedTags.includes(tag));
-      return [...new Set([...manualTags, ...extractedTags])];
-    });
+    const tagTimer = setTimeout(() => {
+      const extractedTags = extractHashtags(content);
+      setTags(prevTags => {
+        const manualTags = prevTags.filter(tag => !extractedTags.includes(tag));
+        return [...new Set([...manualTags, ...extractedTags])];
+      });
+    }, 500); // Debounce tag extraction
+
+    return () => clearTimeout(tagTimer);
   }, [content]);
 
   // Highlight hashtags in content
@@ -263,11 +271,11 @@ export function PromptEditor() {
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Title Input */}
         <div className="space-y-2">
-          <Input
+          <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter your prompt title..."
-            className="text-xl font-semibold border-none shadow-none px-0 focus-visible:ring-0"
+            className="w-full text-xl font-semibold bg-transparent border-none outline-none placeholder:text-muted-foreground"
           />
         </div>
 
