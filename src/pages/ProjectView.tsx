@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Project, Prompt, Tool, dbHelpers } from "@/lib/database";
 import { PromptCard } from "@/components/prompt-card";
 import { ToolCard } from "@/components/tool-card";
@@ -19,28 +20,16 @@ interface ProjectViewProps {
   onBack: () => void;
 }
 
-const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
 const TOOL_CATEGORIES = ["Image", "Text", "Video", "Workflow", "API", "Analytics", "Other"];
 
 export function ProjectView({ project, onBack }: ProjectViewProps) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("prompts");
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [tools, setTools] = useState<Tool[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isCreatePromptOpen, setIsCreatePromptOpen] = useState(false);
   const [isCreateToolOpen, setIsCreateToolOpen] = useState(false);
-  const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
-  
-  // Prompt form state
-  const [promptForm, setPromptForm] = useState({
-    title: "",
-    content: "",
-    category: "",
-    format: "text" as 'text' | 'json',
-    tags: "",
-    isFavorite: false,
-  });
 
   // Tool form state
   const [toolForm, setToolForm] = useState({
@@ -74,69 +63,6 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
     }
   };
 
-  const handleCreatePrompt = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!promptForm.title.trim() || !promptForm.content.trim()) return;
-
-    try {
-      const prompt = await dbHelpers.createPrompt({
-        projectId: project.id,
-        title: promptForm.title.trim(),
-        content: promptForm.content.trim(),
-        category: promptForm.category || "Other",
-        format: promptForm.format || "text",
-        tags: promptForm.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        isFavorite: promptForm.isFavorite,
-      });
-
-      setPrompts(prev => [prompt, ...prev]);
-      setPromptForm({ title: "", content: "", category: "", format: "text", tags: "", isFavorite: false });
-      setIsCreatePromptOpen(false);
-      
-      toast({
-        title: "Prompt created",
-        description: "Your prompt has been saved successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error creating prompt",
-        description: "Unable to create prompt.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdatePrompt = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingPrompt || !promptForm.title.trim() || !promptForm.content.trim()) return;
-
-    try {
-      await dbHelpers.updatePrompt(editingPrompt.id, {
-        title: promptForm.title.trim(),
-        content: promptForm.content.trim(),
-        category: promptForm.category || "Other",
-        format: promptForm.format || "text",
-        tags: promptForm.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        isFavorite: promptForm.isFavorite,
-      });
-
-      await loadData();
-      setEditingPrompt(null);
-      setPromptForm({ title: "", content: "", category: "", format: "text", tags: "", isFavorite: false });
-      
-      toast({
-        title: "Prompt updated",
-        description: "Your prompt has been updated successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error updating prompt",
-        description: "Unable to update prompt.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleCreateTool = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!toolForm.name.trim()) return;
@@ -163,6 +89,36 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
       toast({
         title: "Error creating tool",
         description: "Unable to create tool.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateTool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTool || !toolForm.name.trim()) return;
+
+    try {
+      await dbHelpers.updateTool(editingTool.id, {
+        name: toolForm.name.trim(),
+        url: toolForm.url.trim(),
+        category: toolForm.category || "Other",
+        notes: toolForm.notes.trim() || undefined,
+        tags: toolForm.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+      });
+
+      await loadData();
+      setEditingTool(null);
+      setToolForm({ name: "", url: "", category: "", notes: "", tags: "" });
+      
+      toast({
+        title: "Tool updated",
+        description: "Your tool has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error updating tool",
+        description: "Unable to update tool.",
         variant: "destructive",
       });
     }
@@ -202,23 +158,11 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
     }
   };
 
-  const startEditPrompt = (prompt: Prompt) => {
-    setEditingPrompt(prompt);
-    setPromptForm({
-      title: prompt.title,
-      content: prompt.content,
-      category: prompt.category,
-      format: prompt.format || "text",
-      tags: prompt.tags.join(', '),
-      isFavorite: prompt.isFavorite,
-    });
-  };
-
   const startEditTool = (tool: Tool) => {
     setEditingTool(tool);
     setToolForm({
       name: tool.name,
-      url: tool.url,
+      url: tool.url || "",
       category: tool.category,
       notes: tool.notes || "",
       tags: tool.tags.join(', '),
@@ -291,7 +235,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
                 <PromptCard
                   key={prompt.id}
                   prompt={prompt}
-                  onEdit={() => startEditPrompt(prompt)}
+                  onEdit={() => {}} // Handled by prompt card internally now
                   onDelete={() => handleDeletePrompt(prompt)}
                   onToggleFavorite={() => dbHelpers.togglePromptFavorite(prompt.id).then(loadData)}
                   onIncrementUsage={() => dbHelpers.incrementPromptUsage(prompt.id).then(loadData)}
@@ -328,98 +272,9 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
 
       {/* FAB */}
       <FloatingActionButton
-        onClick={() => activeTab === "prompts" ? setIsCreatePromptOpen(true) : setIsCreateToolOpen(true)}
+        onClick={() => activeTab === "prompts" ? navigate(`/project/${project.id}/prompt/new`) : setIsCreateToolOpen(true)}
         icon={activeTab === "prompts" ? <FileText className="h-6 w-6" /> : <Wrench className="h-6 w-6" />}
       />
-
-      {/* Create/Edit Prompt Dialog */}
-      <Dialog 
-        open={isCreatePromptOpen || !!editingPrompt} 
-        onOpenChange={() => {
-          setIsCreatePromptOpen(false);
-          setEditingPrompt(null);
-          setPromptForm({ title: "", content: "", category: "", format: "text", tags: "", isFavorite: false });
-        }}
-      >
-        <DialogContent className="w-[90vw] max-w-lg rounded-lg">
-          <DialogHeader>
-            <DialogTitle>{editingPrompt ? "Edit Prompt" : "Create New Prompt"}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={editingPrompt ? handleUpdatePrompt : handleCreatePrompt} className="space-y-4">
-            <div>
-              <Label htmlFor="prompt-title">Title</Label>
-              <Input
-                id="prompt-title"
-                value={promptForm.title}
-                onChange={(e) => setPromptForm(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Enter prompt title"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="prompt-content">Content</Label>
-              <Textarea
-                id="prompt-content"
-                value={promptForm.content}
-                onChange={(e) => setPromptForm(prev => ({ ...prev, content: e.target.value }))}
-                placeholder="Enter your prompt content"
-                rows={6}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="prompt-category">Category</Label>
-              <Select value={promptForm.category} onValueChange={(value) => setPromptForm(prev => ({ ...prev, category: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PROMPT_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="prompt-format">Format</Label>
-              <Select value={promptForm.format || 'text'} onValueChange={(value) => setPromptForm(prev => ({ ...prev, format: value as 'text' | 'json' }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="text">Text</SelectItem>
-                  <SelectItem value="json">JSON</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="prompt-tags">Tags (Optional)</Label>
-              <Input
-                id="prompt-tags"
-                value={promptForm.tags}
-                onChange={(e) => setPromptForm(prev => ({ ...prev, tags: e.target.value }))}
-                placeholder="Enter tags separated by commas"
-              />
-            </div>
-            <div className="flex gap-2 pt-4">
-              <Button type="submit" className="flex-1">
-                {editingPrompt ? "Update Prompt" : "Create Prompt"}
-              </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setIsCreatePromptOpen(false);
-                  setEditingPrompt(null);
-                  setPromptForm({ title: "", content: "", category: "", format: "text", tags: "", isFavorite: false });
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Create/Edit Tool Dialog */}
       <Dialog 
@@ -434,7 +289,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
           <DialogHeader>
             <DialogTitle>{editingTool ? "Edit Tool" : "Create New Tool"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateTool} className="space-y-4">
+          <form onSubmit={editingTool ? handleUpdateTool : handleCreateTool} className="space-y-4">
             <div>
               <Label htmlFor="tool-name">Name</Label>
               <Input

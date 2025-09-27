@@ -90,7 +90,9 @@ export function PromptCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.location.href = `/project/${prompt.projectId}/prompt/edit?promptId=${prompt.id}`}>
+                  Edit
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={onDelete} className="text-destructive">
                   Delete
                 </DropdownMenuItem>

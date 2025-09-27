@@ -10,6 +10,13 @@ export interface Project {
   updatedAt: Date;
 }
 
+export interface PromptVersion {
+  versionId: string;
+  timestamp: Date;
+  content: string;
+  title: string;
+}
+
 export interface Prompt {
   id: string;
   projectId: string;
@@ -23,6 +30,7 @@ export interface Prompt {
   lastUsedAt?: Date;
   usageCount: number;
   isFavorite: boolean;
+  versions: PromptVersion[];
 }
 
 export interface Tool {
@@ -132,15 +140,47 @@ export const dbHelpers = {
     return storage.get<Project>(STORAGE_KEYS.PROJECTS);
   },
 
+  // Migration helper for existing prompts without versions
+  async migratePromptsToVersioning(): Promise<void> {
+    const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    let hasChanges = false;
+    
+    prompts.forEach(prompt => {
+      if (!prompt.versions || prompt.versions.length === 0) {
+        // Create initial version from current content
+        const initialVersion: PromptVersion = {
+          versionId: uuidv4(),
+          timestamp: prompt.createdAt || new Date(),
+          content: prompt.content,
+          title: prompt.title,
+        };
+        prompt.versions = [initialVersion];
+        hasChanges = true;
+      }
+    });
+    
+    if (hasChanges) {
+      storage.set(STORAGE_KEYS.PROMPTS, prompts);
+    }
+  },
+
   // Prompts
-  async createPrompt(data: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt' | 'usageCount'>): Promise<Prompt> {
+  async createPrompt(data: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt' | 'usageCount' | 'versions'>): Promise<Prompt> {
     const now = new Date();
+    const initialVersion: PromptVersion = {
+      versionId: uuidv4(),
+      timestamp: now,
+      content: data.content,
+      title: data.title,
+    };
+    
     const prompt: Prompt = {
       id: uuidv4(),
       ...data,
       createdAt: now,
       updatedAt: now,
       usageCount: 0,
+      versions: [initialVersion],
     };
     const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
     prompts.push(prompt);
@@ -148,13 +188,64 @@ export const dbHelpers = {
     return prompt;
   },
 
-  async updatePrompt(id: string, data: Partial<Omit<Prompt, 'id' | 'createdAt'>>): Promise<void> {
+  async updatePrompt(id: string, data: Partial<Omit<Prompt, 'id' | 'createdAt' | 'versions'>>, createVersion = true): Promise<void> {
     const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
     const index = prompts.findIndex(p => p.id === id);
     if (index !== -1) {
-      prompts[index] = { ...prompts[index], ...data, updatedAt: new Date() };
+      const updatedPrompt = { ...prompts[index], ...data, updatedAt: new Date() };
+      
+      // Create a new version if content or title changed and createVersion is true
+      if (createVersion && (data.content || data.title)) {
+        const newVersion: PromptVersion = {
+          versionId: uuidv4(),
+          timestamp: new Date(),
+          content: data.content || updatedPrompt.content,
+          title: data.title || updatedPrompt.title,
+        };
+        updatedPrompt.versions = [...updatedPrompt.versions, newVersion];
+      }
+      
+      prompts[index] = updatedPrompt;
       storage.set(STORAGE_KEYS.PROMPTS, prompts);
     }
+  },
+
+  async getPromptVersions(id: string): Promise<PromptVersion[]> {
+    const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    const prompt = prompts.find(p => p.id === id);
+    return prompt?.versions || [];
+  },
+
+  async restorePromptVersion(id: string, versionId: string): Promise<void> {
+    const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    const index = prompts.findIndex(p => p.id === id);
+    if (index !== -1) {
+      const prompt = prompts[index];
+      const version = prompt.versions.find(v => v.versionId === versionId);
+      if (version) {
+        // Create new version before restoring
+        const newVersion: PromptVersion = {
+          versionId: uuidv4(),
+          timestamp: new Date(),
+          content: version.content,
+          title: version.title,
+        };
+        
+        prompts[index] = {
+          ...prompt,
+          title: version.title,
+          content: version.content,
+          updatedAt: new Date(),
+          versions: [...prompt.versions, newVersion],
+        };
+        storage.set(STORAGE_KEYS.PROMPTS, prompts);
+      }
+    }
+  },
+
+  async autosavePrompt(id: string, data: { title?: string; content?: string }): Promise<void> {
+    // Autosave without creating versions
+    this.updatePrompt(id, data, false);
   },
 
   async incrementPromptUsage(id: string): Promise<void> {
@@ -182,6 +273,8 @@ export const dbHelpers = {
   },
 
   async getProjectPrompts(projectId: string): Promise<Prompt[]> {
+    // Ensure migration runs first
+    await this.migratePromptsToVersioning();
     const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
     return prompts.filter(p => p.projectId === projectId);
   },
