@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Project, Prompt, Tool, dbHelpers } from "@/lib/database";
 import { PromptCard } from "@/components/prompt-card";
 import { ToolCard } from "@/components/tool-card";
@@ -14,21 +14,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, FileText, Wrench } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface ProjectViewProps {
-  project: Project;
-  onBack: () => void;
-}
+import { PromptCreationModal } from "@/components/PromptCreationModal";
+import { FilterDropdown } from "@/components/ui/filter-dropdown";
 
 const TOOL_CATEGORIES = ["Image", "Text", "Video", "Workflow", "API", "Analytics", "Other"];
+const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
 
-export function ProjectView({ project, onBack }: ProjectViewProps) {
+export default function ProjectView() {
+  const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const [project, setProject] = useState<Project | null>(null);
   const [activeTab, setActiveTab] = useState("prompts");
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [tools, setTools] = useState<Tool[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [isCreateToolOpen, setIsCreateToolOpen] = useState(false);
+  const [isCreatePromptOpen, setIsCreatePromptOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
 
   // Tool form state
@@ -43,15 +45,28 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    loadData();
-  }, [project.id]);
+    if (projectId) {
+      loadData();
+    }
+  }, [projectId]);
 
   const loadData = async () => {
+    if (!projectId) return;
+    
     try {
-      const [projectPrompts, projectTools] = await Promise.all([
-        dbHelpers.getProjectPrompts(project.id),
-        dbHelpers.getProjectTools(project.id),
+      const [allProjects, projectPrompts, projectTools] = await Promise.all([
+        dbHelpers.getAllProjects(),
+        dbHelpers.getProjectPrompts(projectId),
+        dbHelpers.getProjectTools(projectId),
       ]);
+      
+      const currentProject = allProjects.find(p => p.id === projectId);
+      if (!currentProject) {
+        navigate('/');
+        return;
+      }
+      
+      setProject(currentProject);
       setPrompts(projectPrompts);
       setTools(projectTools);
     } catch (error) {
@@ -69,7 +84,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
 
     try {
       const tool = await dbHelpers.createTool({
-        projectId: project.id,
+        projectId: projectId!,
         name: toolForm.name.trim(),
         url: toolForm.url.trim(),
         category: toolForm.category || "Other",
@@ -169,17 +184,78 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
     });
   };
 
-  const filteredPrompts = prompts.filter(prompt =>
-    prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    prompt.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    prompt.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const handleCreatePrompt = (category: string, format: 'text' | 'json') => {
+    navigate(`/project/${projectId}/prompt/new?category=${category}&format=${format}`);
+  };
 
-  const filteredTools = tools.filter(tool =>
-    tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tool.notes?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tool.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Get filter options
+  const getPromptFilterOptions = () => {
+    const categories = [...new Set(prompts.map(p => p.category))];
+    const tags = [...new Set(prompts.flatMap(p => p.tags))];
+    
+    return [
+      ...categories.map(cat => ({ id: `category:${cat}`, label: `Category: ${cat}`, count: prompts.filter(p => p.category === cat).length })),
+      ...tags.map(tag => ({ id: `tag:${tag}`, label: `#${tag}`, count: prompts.filter(p => p.tags.includes(tag)).length })),
+      { id: 'favorite', label: 'Favorites', count: prompts.filter(p => p.isFavorite).length },
+      { id: 'most-used', label: 'Most Used', count: prompts.filter(p => p.usageCount > 0).length }
+    ].filter(option => option.count > 0);
+  };
+
+  const getToolFilterOptions = () => {
+    const categories = [...new Set(tools.map(t => t.category))];
+    const tags = [...new Set(tools.flatMap(t => t.tags))];
+    
+    return [
+      ...categories.map(cat => ({ id: `category:${cat}`, label: `Category: ${cat}`, count: tools.filter(t => t.category === cat).length })),
+      ...tags.map(tag => ({ id: `tag:${tag}`, label: `#${tag}`, count: tools.filter(t => t.tags.includes(tag)).length }))
+    ].filter(option => option.count > 0);
+  };
+
+  const filteredPrompts = prompts.filter(prompt => {
+    const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prompt.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prompt.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    if (!matchesSearch) return false;
+    
+    if (selectedFilters.length === 0) return true;
+    
+    return selectedFilters.some(filter => {
+      if (filter.startsWith('category:')) {
+        return prompt.category === filter.replace('category:', '');
+      } else if (filter.startsWith('tag:')) {
+        return prompt.tags.includes(filter.replace('tag:', ''));
+      } else if (filter === 'favorite') {
+        return prompt.isFavorite;
+      } else if (filter === 'most-used') {
+        return prompt.usageCount > 0;
+      }
+      return false;
+    });
+  });
+
+  const filteredTools = tools.filter(tool => {
+    const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tool.notes?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tool.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    if (!matchesSearch) return false;
+    
+    if (selectedFilters.length === 0) return true;
+    
+    return selectedFilters.some(filter => {
+      if (filter.startsWith('category:')) {
+        return tool.category === filter.replace('category:', '');
+      } else if (filter.startsWith('tag:')) {
+        return tool.tags.includes(filter.replace('tag:', ''));
+      }
+      return false;
+    });
+  });
+
+  if (!project) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -187,7 +263,7 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="px-4 py-4">
           <div className="flex items-center gap-3 mb-4">
-            <Button variant="ghost" size="sm" onClick={onBack}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex-1">
@@ -198,12 +274,20 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
             </div>
           </div>
           
-          <SearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder={`Search ${activeTab}...`}
-            className="w-full"
-          />
+          <div className="flex gap-2">
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder={`Search ${activeTab}...`}
+              className="flex-1"
+            />
+            <FilterDropdown
+              title={`Filter ${activeTab}`}
+              options={activeTab === "prompts" ? getPromptFilterOptions() : getToolFilterOptions()}
+              selectedFilters={selectedFilters}
+              onFiltersChange={setSelectedFilters}
+            />
+          </div>
         </div>
       </div>
 
@@ -272,8 +356,15 @@ export function ProjectView({ project, onBack }: ProjectViewProps) {
 
       {/* FAB */}
       <FloatingActionButton
-        onClick={() => activeTab === "prompts" ? navigate(`/project/${project.id}/prompt/new`) : setIsCreateToolOpen(true)}
+        onClick={() => activeTab === "prompts" ? setIsCreatePromptOpen(true) : setIsCreateToolOpen(true)}
         icon={activeTab === "prompts" ? <FileText className="h-6 w-6" /> : <Wrench className="h-6 w-6" />}
+      />
+
+      {/* Create Prompt Modal */}
+      <PromptCreationModal
+        open={isCreatePromptOpen}
+        onOpenChange={setIsCreatePromptOpen}
+        onContinue={handleCreatePrompt}
       />
 
       {/* Create/Edit Tool Dialog */}

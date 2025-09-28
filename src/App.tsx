@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { PromptEditor } from "./components/PromptEditor";
+import ProjectView from "./pages/ProjectView";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/project/:projectId" element={<ProjectView />} />
           <Route path="/project/:projectId/prompt/new" element={<PromptEditor />} />
           <Route path="/project/:projectId/prompt/edit" element={<PromptEditor />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

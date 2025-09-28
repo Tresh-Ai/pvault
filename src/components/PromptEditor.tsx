@@ -1,36 +1,34 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
-import { ArrowLeft, Save, History, Clock } from "lucide-react";
+import { ArrowLeft, Save, History, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
-const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
 
 export function PromptEditor() {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
   const [searchParams] = useSearchParams();
   const promptId = searchParams.get('promptId');
+  const initialCategory = searchParams.get('category') || "Other";
+  const initialFormat = (searchParams.get('format') as 'text' | 'json') || 'text';
   const isEdit = !!promptId;
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState("Other");
-  const [format, setFormat] = useState<'text' | 'json'>('text');
+  const [category, setCategory] = useState(initialCategory);
+  const [format, setFormat] = useState<'text' | 'json'>(initialFormat);
   const [tags, setTags] = useState<string[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
   const [isVersionsOpen, setIsVersionsOpen] = useState(false);
   const [versions, setVersions] = useState<PromptVersion[]>([]);
   
-  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const autosaveTimer = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
 
@@ -68,28 +66,28 @@ export function PromptEditor() {
 
   // Auto-save functionality
   const triggerAutosave = useCallback(async () => {
-    if (!projectId || !title.trim() || !content.trim()) return;
+    if (!projectId || !title.trim() || !content.trim() || !isEdit || !promptId) return;
     
     try {
-      if (isEdit && promptId) {
-        await dbHelpers.autosavePrompt(promptId, { title, content });
-      }
-      setLastSaved(new Date());
+      await dbHelpers.autosavePrompt(promptId, { title, content });
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
     } catch (error) {
       console.error('Autosave failed:', error);
     }
   }, [projectId, title, content, isEdit, promptId]);
 
-  // Debounced autosave - increased delay and only when content exists
+  // Debounced autosave
   useEffect(() => {
     if (autosaveTimer.current) {
       clearTimeout(autosaveTimer.current);
     }
     
-    if (title.trim() && content.trim()) {
+    if (title.trim() && content.trim() && isEdit) {
+      setIsSaved(false);
       autosaveTimer.current = setTimeout(() => {
         triggerAutosave();
-      }, 3000); // Increased to 3 seconds for better UX
+      }, 2000);
     }
 
     return () => {
@@ -97,14 +95,12 @@ export function PromptEditor() {
         clearTimeout(autosaveTimer.current);
       }
     };
-  }, [title, content, triggerAutosave]);
+  }, [title, content, triggerAutosave, isEdit]);
 
-  // Extract tags from the last line only using #hashtags
+  // Extract tags from content using #hashtags
   const extractHashtags = (text: string): string[] => {
-    const lines = text.split('\n');
-    const lastLine = lines[lines.length - 1] || '';
     const hashtagRegex = /#(\w+)/g;
-    const matches = lastLine.match(hashtagRegex) || [];
+    const matches = text.match(hashtagRegex) || [];
     return [...new Set(matches.map(tag => tag.slice(1)))]; // Remove # and deduplicate
   };
 
@@ -112,19 +108,58 @@ export function PromptEditor() {
   useEffect(() => {
     const tagTimer = setTimeout(() => {
       const extractedTags = extractHashtags(content);
-      setTags(prevTags => {
-        const manualTags = prevTags.filter(tag => !extractedTags.includes(tag));
-        return [...new Set([...manualTags, ...extractedTags])];
-      });
-    }, 500); // Debounce tag extraction
+      setTags(extractedTags);
+    }, 300);
 
     return () => clearTimeout(tagTimer);
   }, [content]);
 
-  // Highlight hashtags in content
-  const highlightContent = (text: string) => {
-    return text.replace(/#(\w+)/g, '<span class="bg-primary/20 text-primary px-1 rounded">$&</span>');
+  // Handle content changes from contenteditable
+  const handleContentChange = () => {
+    if (contentRef.current) {
+      const text = contentRef.current.textContent || '';
+      setContent(text);
+    }
   };
+
+  // Apply hashtag highlighting
+  const applyHashtagHighlighting = () => {
+    if (!contentRef.current) return;
+    
+    const selection = window.getSelection();
+    const range = selection?.getRangeAt(0);
+    const startOffset = range?.startOffset || 0;
+    
+    const text = contentRef.current.textContent || '';
+    const highlightedHTML = text.replace(
+      /#(\w+)/g, 
+      '<span class="bg-primary/20 text-primary px-1 rounded-sm">#$1</span>'
+    );
+    
+    contentRef.current.innerHTML = highlightedHTML;
+    
+    // Restore cursor position
+    if (selection && range) {
+      try {
+        const newRange = document.createRange();
+        const textNode = contentRef.current.childNodes[0];
+        if (textNode) {
+          newRange.setStart(textNode, Math.min(startOffset, textNode.textContent?.length || 0));
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+      } catch (e) {
+        // Ignore cursor positioning errors
+      }
+    }
+  };
+
+  // Apply highlighting after content updates
+  useEffect(() => {
+    const timer = setTimeout(applyHashtagHighlighting, 100);
+    return () => clearTimeout(timer);
+  }, [content]);
 
   const handleSave = async () => {
     if (!projectId || !title.trim() || !content.trim()) {
@@ -167,7 +202,7 @@ export function PromptEditor() {
         });
       }
       
-      setLastSaved(new Date());
+      setIsSaved(true);
       navigate(`/project/${projectId}`);
     } catch (error) {
       toast({
@@ -220,47 +255,51 @@ export function PromptEditor() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="px-4 py-4">
+        <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => navigate(`/project/${projectId}`)}
+                className="shrink-0"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-semibold">
-                  {isEdit ? "Edit Prompt" : "Create Prompt"}
-                </h1>
-                {lastSaved && (
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Saved {lastSaved.toLocaleTimeString()}
-                  </span>
-                )}
-              </div>
+              <h1 className="text-base font-semibold truncate">
+                {isEdit ? "Edit Prompt" : "Create Prompt"}
+              </h1>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {isEdit && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleViewVersions}
+                  className="hidden sm:flex"
                 >
-                  <History className="h-4 w-4 mr-1" />
-                  Versions
+                  <History className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Versions</span>
                 </Button>
               )}
               <Button 
                 onClick={handleSave} 
                 disabled={isLoading || !title.trim() || !content.trim()}
                 size="sm"
+                className="min-w-[4rem]"
               >
-                <Save className="h-4 w-4 mr-1" />
-                Save
+                {isSaved ? (
+                  <>
+                    <Check className="h-4 w-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Saved</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Save</span>
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -268,72 +307,39 @@ export function PromptEditor() {
       </div>
 
       {/* Editor Content */}
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 min-h-[calc(100vh-80px)]">
         {/* Title Input */}
-        <div className="space-y-2">
+        <div className="mb-6">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter your prompt title..."
-            className="w-full text-xl font-semibold bg-transparent border-none outline-none placeholder:text-muted-foreground"
+            placeholder="Untitled prompt..."
+            className="w-full text-xl sm:text-2xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/60 resize-none"
+            style={{ fontFamily: 'inherit' }}
           />
         </div>
 
         {/* Content Editor */}
-        <div className="relative">
-          <textarea
+        <div className="relative min-h-[500px]">
+          <div
             ref={contentRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Write your prompt here... Use #tags to organize your content."
+            contentEditable
+            onInput={handleContentChange}
+            onBlur={applyHashtagHighlighting}
+            data-placeholder="Write your prompt here... Use #tags to organize your content."
             className={cn(
-              "w-full min-h-[400px] p-6 text-base leading-relaxed",
-              "border border-border rounded-lg resize-none",
-              "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-              "placeholder:text-muted-foreground bg-background"
+              "w-full min-h-[500px] p-0 text-base sm:text-lg leading-relaxed",
+              "outline-none resize-none",
+              "placeholder:text-muted-foreground/60 bg-transparent",
+              "prose prose-lg max-w-none",
+              "[&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-muted-foreground/60 [&:empty]:before:pointer-events-none"
             )}
+            style={{ 
+              fontFamily: 'inherit',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word'
+            }}
           />
-        </div>
-
-        {/* Tags Display */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs">
-                #{tag}
-              </Badge>
-            ))}
-          </div>
-        )}
-
-        {/* Metadata */}
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium">Category:</label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PROMPT_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium">Format:</label>
-            <Select value={format} onValueChange={(value) => setFormat(value as 'text' | 'json')}>
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">Text</SelectItem>
-                <SelectItem value="json">JSON</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
       </div>
 

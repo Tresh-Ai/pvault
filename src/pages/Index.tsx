@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
-import { Project } from "@/lib/database";
+import { useNavigate } from "react-router-dom";
 import { ProjectsList } from "./ProjectsList";
-import { ProjectView } from "./ProjectView";
 import { Settings } from "./Settings";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useOnboarding } from "@/hooks/useOnboarding";
 
 const Index = () => {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
   const { state: onboardingState, completeOnboarding } = useOnboarding();
 
@@ -57,14 +56,9 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {showSettings ? (
         <Settings onBack={() => setShowSettings(false)} />
-      ) : selectedProject ? (
-        <ProjectView 
-          project={selectedProject} 
-          onBack={() => setSelectedProject(null)} 
-        />
       ) : (
         <ProjectsList 
-          onProjectSelect={setSelectedProject}
+          onProjectSelect={(project) => navigate(`/project/${project.id}`)}
           onSettingsClick={() => setShowSettings(true)}
         />
       )}
