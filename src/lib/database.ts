@@ -192,20 +192,35 @@ export const dbHelpers = {
     const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
     const index = prompts.findIndex(p => p.id === id);
     if (index !== -1) {
-      const updatedPrompt = { ...prompts[index], ...data, updatedAt: new Date() };
+      const prompt = prompts[index];
       
-      // Create a new version if content or title changed and createVersion is true
+      // Create version only if manual save and content/title changed
       if (createVersion && (data.content || data.title)) {
-        const newVersion: PromptVersion = {
+        // Only keep the current version as previous, replace any existing versions
+        const previousVersion: PromptVersion = {
           versionId: uuidv4(),
           timestamp: new Date(),
-          content: data.content || updatedPrompt.content,
-          title: data.title || updatedPrompt.title,
+          content: prompt.content,
+          title: prompt.title,
         };
-        updatedPrompt.versions = [...updatedPrompt.versions, newVersion];
+        
+        const updatedPrompt = {
+          ...prompt,
+          ...data,
+          updatedAt: new Date(),
+          versions: [previousVersion], // Only keep one previous version
+        };
+        prompts[index] = updatedPrompt;
+      } else {
+        // Just update without versioning (for autosave)
+        const updatedPrompt = {
+          ...prompt,
+          ...data,
+          updatedAt: new Date(),
+        };
+        prompts[index] = updatedPrompt;
       }
       
-      prompts[index] = updatedPrompt;
       storage.set(STORAGE_KEYS.PROMPTS, prompts);
     }
   },
@@ -223,12 +238,12 @@ export const dbHelpers = {
       const prompt = prompts[index];
       const version = prompt.versions.find(v => v.versionId === versionId);
       if (version) {
-        // Create new version before restoring
-        const newVersion: PromptVersion = {
+        // Create backup of current state before restoring
+        const backupVersion: PromptVersion = {
           versionId: uuidv4(),
           timestamp: new Date(),
-          content: version.content,
-          title: version.title,
+          content: prompt.content,
+          title: prompt.title,
         };
         
         prompts[index] = {
@@ -236,7 +251,7 @@ export const dbHelpers = {
           title: version.title,
           content: version.content,
           updatedAt: new Date(),
-          versions: [...prompt.versions, newVersion],
+          versions: [backupVersion], // Replace with backup of current state
         };
         storage.set(STORAGE_KEYS.PROMPTS, prompts);
       }

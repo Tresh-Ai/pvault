@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Project, dbHelpers } from "@/lib/database";
 import { ProjectCard } from "@/components/project-card";
 import { SearchInput } from "@/components/ui/search-input";
+import { FilterDropdown } from "@/components/ui/filter-dropdown";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -138,12 +139,23 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
             </Button>
           </div>
           
-          <SearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Search projects..."
-            className="w-full"
-          />
+          <div className="flex gap-2">
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search projects..."
+              className="flex-1"
+            />
+            <FilterDropdown
+              title="Filter projects"
+              options={[
+                { id: 'recent', label: 'Recently Updated', count: projects.filter(p => p.updatedAt && new Date(p.updatedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000).length },
+                { id: 'old', label: 'Older Projects', count: projects.filter(p => !p.updatedAt || new Date(p.updatedAt).getTime() <= Date.now() - 7 * 24 * 60 * 60 * 1000).length }
+              ].filter(option => option.count > 0)}
+              selectedFilters={[]}
+              onFiltersChange={() => {}}
+            />
+          </div>
         </div>
       </div>
 

@@ -54,6 +54,12 @@ export function PromptEditor() {
         setTags(prompt.tags);
         setIsFavorite(prompt.isFavorite);
         setVersions(prompt.versions || []);
+        
+        // Update contenteditable div
+        if (contentRef.current) {
+          contentRef.current.textContent = prompt.content;
+          setTimeout(() => applyHashtagHighlighting(), 100);
+        }
       }
     } catch (error) {
       toast({
@@ -77,7 +83,7 @@ export function PromptEditor() {
     }
   }, [projectId, title, content, isEdit, promptId]);
 
-  // Debounced autosave
+  // Debounced autosave - 5 seconds after inactivity
   useEffect(() => {
     if (autosaveTimer.current) {
       clearTimeout(autosaveTimer.current);
@@ -87,7 +93,7 @@ export function PromptEditor() {
       setIsSaved(false);
       autosaveTimer.current = setTimeout(() => {
         triggerAutosave();
-      }, 2000);
+      }, 5000); // Changed to 5 seconds
     }
 
     return () => {
@@ -104,10 +110,12 @@ export function PromptEditor() {
     return [...new Set(matches.map(tag => tag.slice(1)))]; // Remove # and deduplicate
   };
 
-  // Update tags when content changes - debounced
+  // Update tags when content changes - debounced (extract only from last line)
   useEffect(() => {
     const tagTimer = setTimeout(() => {
-      const extractedTags = extractHashtags(content);
+      const lines = content.split('\n');
+      const lastLine = lines[lines.length - 1] || '';
+      const extractedTags = extractHashtags(lastLine);
       setTags(extractedTags);
     }, 300);
 
@@ -127,8 +135,18 @@ export function PromptEditor() {
     if (!contentRef.current) return;
     
     const selection = window.getSelection();
-    const range = selection?.getRangeAt(0);
-    const startOffset = range?.startOffset || 0;
+    let range = null;
+    let startOffset = 0;
+    
+    // Safely get selection range
+    try {
+      if (selection && selection.rangeCount > 0) {
+        range = selection.getRangeAt(0);
+        startOffset = range.startOffset;
+      }
+    } catch (e) {
+      // Ignore selection errors
+    }
     
     const text = contentRef.current.textContent || '';
     const highlightedHTML = text.replace(
