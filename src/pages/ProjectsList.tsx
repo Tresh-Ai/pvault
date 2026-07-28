@@ -122,23 +122,27 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <img src="/icon-192.png" alt="PVault" className="w-8 h-8 rounded-lg" />
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                  PVault
-                </h1>
-                <p className="text-sm text-muted-foreground">Your AI memory, organized</p>
-              </div>
+      <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
+        <div className="px-5 pt-6 pb-4">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              <span className="text-xs font-medium tracking-widest uppercase text-muted-foreground">
+                PVault
+              </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={onSettingsClick}>
-              <Settings className="h-5 w-5" />
+            <Button variant="ghost" size="sm" onClick={onSettingsClick} className="h-9 w-9 p-0 rounded-full">
+              <Settings className="h-4 w-4" />
             </Button>
           </div>
-          
+
+          <div className="mb-5">
+            <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {projects.length} {projects.length === 1 ? 'vault' : 'vaults'}
+            </p>
+          </div>
+
           <div className="flex gap-2">
             <SearchInput
               value={searchQuery}
@@ -160,21 +164,19 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
       </div>
 
       {/* Content */}
-      <div className="px-4 py-6 pb-24">
+      <div className="px-5 py-6 pb-28">
         {filteredProjects.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="mb-4">
-              <div className="w-16 h-16 mx-auto bg-gradient-primary rounded-full flex items-center justify-center mb-4">
-                <Plus className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
-              <p className="text-muted-foreground mb-6">
-                Create your first project to start organizing your prompts and tools
-              </p>
+          <div className="text-center py-20 max-w-sm mx-auto">
+            <div className="w-14 h-14 mx-auto bg-secondary border border-border rounded-2xl flex items-center justify-center mb-5">
+              <Plus className="h-6 w-6 text-primary" strokeWidth={2.5} />
             </div>
+            <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
+            <p className="text-sm text-muted-foreground">
+              Tap the button below to create your first vault.
+            </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredProjects.map((project) => (
               <ProjectCard
                 key={project.id}

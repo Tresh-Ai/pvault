@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, FileText, Wrench, Download, Vault } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileText, Wrench, Download, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface OnboardingSlidesProps {
@@ -11,103 +11,102 @@ interface OnboardingSlidesProps {
 const slides = [
   {
     icon: FileText,
-    title: "Save prompts like notes,\nbut smarter",
-    description: "Store your AI prompts with tags, categories, and usage tracking. Never lose a great prompt again.",
-    gradient: "from-purple-500 to-blue-500",
+    tag: "01 — Capture",
+    title: "Prompts you can actually find.",
+    description:
+      "Save prompts with tags, categories, and usage tracking. Search instantly across everything.",
   },
   {
     icon: Wrench,
-    title: "Organize tools & resources\nby project",
-    description: "Keep related prompts and AI tools together in projects. Everything you need in one place.",
-    gradient: "from-blue-500 to-cyan-500",
+    tag: "02 — Organize",
+    title: "Tools & prompts, side by side.",
+    description:
+      "Group everything by project. Your AI stack, arranged the way your brain works.",
   },
   {
     icon: Download,
-    title: "Export to text anytime,\nreuse anywhere",
-    description: "Export your prompts as .txt or .json files. Your data stays with you, works offline.",
-    gradient: "from-cyan-500 to-emerald-500",
+    tag: "03 — Reuse",
+    title: "Copy, export, ship.",
+    description:
+      "One tap to copy. Export any project as .txt or .json. Your data, always portable.",
   },
   {
-    icon: Vault,
-    title: "Your AI vault is ready",
-    description: "Everything is stored locally and privately. Start building your personal AI knowledge base.",
-    gradient: "from-emerald-500 to-purple-500",
+    icon: Sparkles,
+    tag: "04 — Private",
+    title: "Fully offline. Fully yours.",
+    description:
+      "Everything lives on your device. No accounts, no tracking, no cloud lock-in.",
   },
 ];
 
 export function OnboardingSlides({ onComplete, onBack }: OnboardingSlidesProps) {
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  const nextSlide = () => {
-    if (currentSlide < slides.length - 1) {
-      setCurrentSlide(currentSlide + 1);
-    } else {
-      onComplete();
-    }
-  };
-
-  const prevSlide = () => {
-    if (currentSlide > 0) {
-      setCurrentSlide(currentSlide - 1);
-    } else {
-      onBack();
-    }
-  };
-
-  const slide = slides[currentSlide];
+  const [i, setI] = useState(0);
+  const slide = slides[i];
   const Icon = slide.icon;
+  const isLast = i === slides.length - 1;
+
+  const next = () => (isLast ? onComplete() : setI(i + 1));
+  const prev = () => (i === 0 ? onBack() : setI(i - 1));
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        {/* Slide Content */}
-        <div className="text-center mb-12">
-          <div className={cn(
-            "w-24 h-24 mx-auto mb-8 rounded-3xl flex items-center justify-center",
-            "bg-gradient-to-br", slide.gradient
-          )}>
-            <Icon className="h-12 w-12 text-white" />
-          </div>
-          
-          <h2 className="text-2xl font-bold mb-4 leading-tight whitespace-pre-line">
-            {slide.title}
-          </h2>
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            {slide.description}
-          </p>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Top progress bar */}
+      <div className="px-6 pt-8">
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={prev}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+          <button
+            onClick={onComplete}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Skip
+          </button>
         </div>
-
-        {/* Progress Dots */}
-        <div className="flex justify-center gap-2 mb-8">
-          {slides.map((_, index) => (
+        <div className="flex gap-1.5">
+          {slides.map((_, idx) => (
             <div
-              key={index}
+              key={idx}
               className={cn(
-                "w-2 h-2 rounded-full transition-all duration-300",
-                index === currentSlide ? "bg-primary w-6" : "bg-muted"
+                "h-1 flex-1 rounded-full transition-all duration-500",
+                idx < i && "bg-foreground",
+                idx === i && "bg-primary",
+                idx > i && "bg-border"
               )}
             />
           ))}
         </div>
+      </div>
 
-        {/* Navigation */}
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={prevSlide}
-            className="flex-1"
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <Button
-            onClick={nextSlide}
-            className="flex-1"
-          >
-            {currentSlide === slides.length - 1 ? "Get Started" : "Next"}
-            {currentSlide < slides.length - 1 && <ChevronRight className="h-4 w-4 ml-2" />}
-          </Button>
+      {/* Content */}
+      <div className="flex-1 flex flex-col justify-center px-6 max-w-md mx-auto w-full">
+        <div className="mb-8 flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl border border-border flex items-center justify-center bg-secondary">
+            <Icon className="h-5 w-5 text-primary" />
+          </div>
+          <span className="text-xs font-medium tracking-widest uppercase text-muted-foreground">
+            {slide.tag}
+          </span>
         </div>
+
+        <h2 className="text-4xl sm:text-5xl font-semibold leading-[1.05] tracking-tight mb-5">
+          {slide.title}
+        </h2>
+        <p className="text-lg text-muted-foreground leading-relaxed">
+          {slide.description}
+        </p>
+      </div>
+
+      {/* CTA */}
+      <div className="px-6 pb-10 max-w-md mx-auto w-full">
+        <Button onClick={next} size="lg" className="w-full h-14 rounded-full text-base group">
+          {isLast ? "Choose your theme" : "Continue"}
+          <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+        </Button>
       </div>
     </div>
   );

@@ -260,20 +260,51 @@ export default function ProjectView() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="px-4 py-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-xl font-bold">{project.name}</h1>
-              {project.description && (
-                <p className="text-sm text-muted-foreground">{project.description}</p>
-              )}
-            </div>
+      <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
+        <div className="px-5 pt-6 pb-4">
+          <button
+            onClick={() => navigate('/')}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 mb-4"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            All projects
+          </button>
+
+          <div className="mb-5">
+            <h1 className="text-3xl font-semibold tracking-tight">{project.name}</h1>
+            {project.description && (
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{project.description}</p>
+            )}
           </div>
-          
+
+          {/* Segmented tabs */}
+          <div className="inline-flex bg-secondary rounded-full p-1 mb-4 w-full sm:w-auto">
+            <button
+              onClick={() => setActiveTab("prompts")}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                activeTab === "prompts"
+                  ? "bg-background text-foreground shadow-card"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Prompts
+              <span className="text-xs opacity-60">{prompts.length}</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("tools")}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                activeTab === "tools"
+                  ? "bg-background text-foreground shadow-card"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Wrench className="h-3.5 w-3.5" />
+              Tools
+              <span className="text-xs opacity-60">{tools.length}</span>
+            </button>
+          </div>
+
           <div className="flex gap-2">
             <SearchInput
               value={searchQuery}
@@ -291,73 +322,57 @@ export default function ProjectView() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4 mt-[10px]">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="prompts" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Prompts ({prompts.length})
-          </TabsTrigger>
-          <TabsTrigger value="tools" className="flex items-center gap-2">
-            <Wrench className="h-4 w-4" />
-            Tools ({tools.length})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="prompts" className="pb-24">
-          {filteredPrompts.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+      {/* Content */}
+      <div className="px-5 py-6 pb-28">
+        {activeTab === "prompts" ? (
+          filteredPrompts.length === 0 ? (
+            <div className="text-center py-20 max-w-sm mx-auto">
+              <div className="w-14 h-14 mx-auto bg-secondary border border-border rounded-2xl flex items-center justify-center mb-5">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
               <h3 className="text-lg font-semibold mb-2">No prompts yet</h3>
-              <p className="text-muted-foreground mb-6">
-                Add your first prompt to get started
-              </p>
+              <p className="text-sm text-muted-foreground">Tap + to save your first prompt.</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {filteredPrompts.map((prompt) => (
                 <PromptCard
                   key={prompt.id}
                   prompt={prompt}
-                  onEdit={() => {}} // Handled by prompt card internally now
+                  onEdit={() => {}}
                   onDelete={() => handleDeletePrompt(prompt)}
                   onToggleFavorite={() => dbHelpers.togglePromptFavorite(prompt.id).then(loadData)}
                   onIncrementUsage={() => dbHelpers.incrementPromptUsage(prompt.id).then(loadData)}
                 />
               ))}
             </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="tools" className="pb-24">
-          {filteredTools.length === 0 ? (
-            <div className="text-center py-12">
-              <Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No tools yet</h3>
-              <p className="text-muted-foreground mb-6">
-                Add your first tool to get started
-              </p>
+          )
+        ) : filteredTools.length === 0 ? (
+          <div className="text-center py-20 max-w-sm mx-auto">
+            <div className="w-14 h-14 mx-auto bg-secondary border border-border rounded-2xl flex items-center justify-center mb-5">
+              <Wrench className="h-6 w-6 text-primary" />
             </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredTools.map((tool) => (
-                <ToolCard
-                  key={tool.id}
-                  tool={tool}
-                  onEdit={() => startEditTool(tool)}
-                  onDelete={() => handleDeleteTool(tool)}
-                  onIncrementUsage={() => dbHelpers.incrementToolUsage(tool.id).then(loadData)}
-                />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+            <h3 className="text-lg font-semibold mb-2">No tools yet</h3>
+            <p className="text-sm text-muted-foreground">Add your first AI tool or link.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredTools.map((tool) => (
+              <ToolCard
+                key={tool.id}
+                tool={tool}
+                onEdit={() => startEditTool(tool)}
+                onDelete={() => handleDeleteTool(tool)}
+                onIncrementUsage={() => dbHelpers.incrementToolUsage(tool.id).then(loadData)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* FAB */}
       <FloatingActionButton
         onClick={() => activeTab === "prompts" ? setIsCreatePromptOpen(true) : setIsCreateToolOpen(true)}
-        icon={activeTab === "prompts" ? <FileText className="h-6 w-6" /> : <Wrench className="h-6 w-6" />}
       />
 
       {/* Create Prompt Modal */}
