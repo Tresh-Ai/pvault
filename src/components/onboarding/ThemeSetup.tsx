@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon, Monitor, Check, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ThemeSetupProps {
@@ -10,82 +10,79 @@ interface ThemeSetupProps {
 }
 
 const themes = [
-  {
-    id: 'light' as const,
-    label: 'Light',
-    icon: Sun,
-    description: 'Clean and bright',
-    preview: 'bg-white border border-gray-200',
-  },
-  {
-    id: 'dark' as const,
-    label: 'Dark',
-    icon: Moon,
-    description: 'Easy on the eyes',
-    preview: 'bg-gray-900 border border-gray-700',
-  },
-  {
-    id: 'system' as const,
-    label: 'Auto',
-    icon: Monitor,
-    description: 'Matches your device',
-    preview: 'bg-gradient-to-br from-white to-gray-900 border border-gray-400',
-  },
+  { id: 'light' as const, label: 'Light', icon: Sun, desc: 'Clean and bright' },
+  { id: 'dark' as const, label: 'Dark', icon: Moon, desc: 'Easy on the eyes' },
+  { id: 'system' as const, label: 'System', icon: Monitor, desc: 'Match your device' },
 ];
 
 export function ThemeSetup({ selectedTheme, onThemeSelect, onComplete, onBack }: ThemeSetupProps) {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold mb-2">Choose Your Theme</h2>
-          <p className="text-muted-foreground">
-            Pick a theme that feels right for you. You can change this later in settings.
-          </p>
-        </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="px-6 pt-8">
+        <button
+          onClick={onBack}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </button>
+      </div>
 
-        <div className="space-y-3 mb-8">
+      <div className="flex-1 flex flex-col justify-center px-6 max-w-md mx-auto w-full">
+        <span className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-3">
+          Last step
+        </span>
+        <h2 className="text-4xl sm:text-5xl font-semibold leading-[1.05] tracking-tight mb-4">
+          Pick your look.
+        </h2>
+        <p className="text-lg text-muted-foreground mb-10">
+          You can change this anytime in settings.
+        </p>
+
+        <div className="space-y-3 mb-10">
           {themes.map((theme) => {
             const Icon = theme.icon;
             const isSelected = selectedTheme === theme.id;
-            
+
             return (
               <button
                 key={theme.id}
                 onClick={() => onThemeSelect(theme.id)}
                 className={cn(
-                  "w-full p-4 rounded-lg border-2 transition-all",
-                  "hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20",
-                  isSelected ? "border-primary bg-primary/5" : "border-border"
+                  "w-full p-4 rounded-2xl border transition-all text-left flex items-center gap-4",
+                  "hover:border-foreground/30",
+                  isSelected
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                    : "border-border bg-card"
                 )}
               >
-                <div className="flex items-center gap-4">
-                  <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", theme.preview)}>
-                    <Icon className={cn("h-6 w-6", theme.id === 'dark' ? 'text-white' : 'text-gray-700')} />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-semibold">{theme.label}</div>
-                    <div className="text-sm text-muted-foreground">{theme.description}</div>
-                  </div>
-                  {isSelected && (
-                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-white" />
-                    </div>
+                <div
+                  className={cn(
+                    "w-11 h-11 rounded-xl flex items-center justify-center border",
+                    isSelected ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border"
                   )}
+                >
+                  <Icon className="h-5 w-5" />
                 </div>
+                <div className="flex-1">
+                  <div className="font-medium">{theme.label}</div>
+                  <div className="text-sm text-muted-foreground">{theme.desc}</div>
+                </div>
+                {isSelected && (
+                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                  </div>
+                )}
               </button>
             );
           })}
         </div>
+      </div>
 
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={onBack} className="flex-1">
-            Back
-          </Button>
-          <Button onClick={onComplete} className="flex-1">
-            Complete Setup
-          </Button>
-        </div>
+      <div className="px-6 pb-10 max-w-md mx-auto w-full">
+        <Button onClick={onComplete} size="lg" className="w-full h-14 rounded-full text-base">
+          Enter PVault
+        </Button>
       </div>
     </div>
   );
