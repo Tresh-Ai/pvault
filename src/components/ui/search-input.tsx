@@ -12,12 +12,12 @@ interface SearchInputProps {
 export function SearchInput({ value, onChange, placeholder = "Search...", className }: SearchInputProps) {
   return (
     <div className={cn("relative", className)}>
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="pl-10 bg-secondary border-border focus:ring-primary"
+        className="pl-10 h-11 rounded-full bg-secondary border-transparent focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/20"
       />
     </div>
   );

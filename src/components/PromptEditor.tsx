@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
-import { ArrowLeft, Save, History, Check } from "lucide-react";
+import { ArrowLeft, Save, History, Check, Star, Hash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+
+const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
 
 export function PromptEditor() {
   const navigate = useNavigate();
@@ -27,25 +29,33 @@ export function PromptEditor() {
   const [isSaved, setIsSaved] = useState(false);
   const [isVersionsOpen, setIsVersionsOpen] = useState(false);
   const [versions, setVersions] = useState<PromptVersion[]>([]);
-  
-  const contentRef = useRef<HTMLDivElement>(null);
-  const autosaveTimer = useRef<NodeJS.Timeout>();
+
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout>>();
   const { toast } = useToast();
 
-  // Load existing prompt if editing
   useEffect(() => {
     if (isEdit && promptId && projectId) {
       loadPrompt();
+    } else {
+      // Focus title on new prompt after mount
+      setTimeout(() => titleRef.current?.focus(), 100);
     }
   }, [isEdit, promptId, projectId]);
 
+  // Auto-grow title
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }, [title]);
+
   const loadPrompt = async () => {
     if (!promptId || !projectId) return;
-    
     try {
       const prompts = await dbHelpers.getProjectPrompts(projectId);
       const prompt = prompts.find(p => p.id === promptId);
-      
       if (prompt) {
         setTitle(prompt.title);
         setContent(prompt.content);
@@ -54,26 +64,14 @@ export function PromptEditor() {
         setTags(prompt.tags);
         setIsFavorite(prompt.isFavorite);
         setVersions(prompt.versions || []);
-        
-        // Update contenteditable div
-        if (contentRef.current) {
-          contentRef.current.textContent = prompt.content;
-          setTimeout(() => applyHashtagHighlighting(), 100);
-        }
       }
-    } catch (error) {
-      toast({
-        title: "Error loading prompt",
-        description: "Unable to load prompt data.",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "Error loading prompt", description: "Unable to load prompt data.", variant: "destructive" });
     }
   };
 
-  // Auto-save functionality
   const triggerAutosave = useCallback(async () => {
     if (!projectId || !title.trim() || !content.trim() || !isEdit || !promptId) return;
-    
     try {
       await dbHelpers.autosavePrompt(promptId, { title, content });
       setIsSaved(true);
@@ -83,109 +81,30 @@ export function PromptEditor() {
     }
   }, [projectId, title, content, isEdit, promptId]);
 
-  // Debounced autosave - 5 seconds after inactivity
   useEffect(() => {
-    if (autosaveTimer.current) {
-      clearTimeout(autosaveTimer.current);
-    }
-    
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     if (title.trim() && content.trim() && isEdit) {
       setIsSaved(false);
-      autosaveTimer.current = setTimeout(() => {
-        triggerAutosave();
-      }, 5000); // Changed to 5 seconds
+      autosaveTimer.current = setTimeout(() => triggerAutosave(), 5000);
     }
-
     return () => {
-      if (autosaveTimer.current) {
-        clearTimeout(autosaveTimer.current);
-      }
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     };
   }, [title, content, triggerAutosave, isEdit]);
 
-  // Extract tags from content using #hashtags
-  const extractHashtags = (text: string): string[] => {
-    const hashtagRegex = /#(\w+)/g;
-    const matches = text.match(hashtagRegex) || [];
-    return [...new Set(matches.map(tag => tag.slice(1)))]; // Remove # and deduplicate
-  };
-
-  // Update tags when content changes - debounced (extract only from last line)
+  // Extract hashtags from full content
   useEffect(() => {
-    const tagTimer = setTimeout(() => {
-      const lines = content.split('\n');
-      const lastLine = lines[lines.length - 1] || '';
-      const extractedTags = extractHashtags(lastLine);
-      setTags(extractedTags);
+    const t = setTimeout(() => {
+      const matches = content.match(/#(\w+)/g) || [];
+      setTags([...new Set(matches.map(tag => tag.slice(1)))]);
     }, 300);
-
-    return () => clearTimeout(tagTimer);
-  }, [content]);
-
-  // Handle content changes from contenteditable
-  const handleContentChange = () => {
-    if (contentRef.current) {
-      const text = contentRef.current.textContent || '';
-      setContent(text);
-    }
-  };
-
-  // Apply hashtag highlighting
-  const applyHashtagHighlighting = () => {
-    if (!contentRef.current) return;
-    
-    const selection = window.getSelection();
-    let range = null;
-    let startOffset = 0;
-    
-    // Safely get selection range
-    try {
-      if (selection && selection.rangeCount > 0) {
-        range = selection.getRangeAt(0);
-        startOffset = range.startOffset;
-      }
-    } catch (e) {
-      // Ignore selection errors
-    }
-    
-    const text = contentRef.current.textContent || '';
-    const highlightedHTML = text.replace(
-      /#(\w+)/g, 
-      '<span class="bg-primary/20 text-primary px-1 rounded-sm">#$1</span>'
-    );
-    
-    contentRef.current.innerHTML = highlightedHTML;
-    
-    // Restore cursor position
-    if (selection && range) {
-      try {
-        const newRange = document.createRange();
-        const textNode = contentRef.current.childNodes[0];
-        if (textNode) {
-          newRange.setStart(textNode, Math.min(startOffset, textNode.textContent?.length || 0));
-          newRange.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(newRange);
-        }
-      } catch (e) {
-        // Ignore cursor positioning errors
-      }
-    }
-  };
-
-  // Apply highlighting after content updates
-  useEffect(() => {
-    const timer = setTimeout(applyHashtagHighlighting, 100);
-    return () => clearTimeout(timer);
+    return () => clearTimeout(t);
   }, [content]);
 
   const handleSave = async () => {
     if (!projectId || !title.trim() || !content.trim()) {
-      toast({
-        title: "Validation error",
-        description: "Title and content are required.",
-        variant: "destructive",
-      });
+      toast({ title: "Add a title & content", description: "Both are required to save.", variant: "destructive" });
+      titleRef.current?.focus();
       return;
     }
 
@@ -193,41 +112,19 @@ export function PromptEditor() {
     try {
       if (isEdit && promptId) {
         await dbHelpers.updatePrompt(promptId, {
-          title: title.trim(),
-          content: content.trim(),
-          category,
-          format,
-          tags,
-          isFavorite,
+          title: title.trim(), content: content.trim(), category, format, tags, isFavorite,
         });
-        toast({
-          title: "Prompt updated",
-          description: "Your prompt has been saved successfully.",
-        });
+        toast({ title: "Saved", description: "Your prompt has been updated." });
       } else {
         await dbHelpers.createPrompt({
-          projectId,
-          title: title.trim(),
-          content: content.trim(),
-          category,
-          format,
-          tags,
-          isFavorite,
+          projectId, title: title.trim(), content: content.trim(), category, format, tags, isFavorite,
         });
-        toast({
-          title: "Prompt created",
-          description: "Your prompt has been saved successfully.",
-        });
+        toast({ title: "Saved", description: "Your prompt has been created." });
       }
-      
       setIsSaved(true);
       navigate(`/project/${projectId}`);
-    } catch (error) {
-      toast({
-        title: "Save failed",
-        description: "Unable to save prompt.",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "Save failed", description: "Unable to save prompt.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -235,130 +132,143 @@ export function PromptEditor() {
 
   const handleViewVersions = async () => {
     if (!promptId) return;
-    
     try {
       const promptVersions = await dbHelpers.getPromptVersions(promptId);
       setVersions(promptVersions);
       setIsVersionsOpen(true);
-    } catch (error) {
-      toast({
-        title: "Error loading versions",
-        description: "Unable to load version history.",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "Error loading versions", variant: "destructive" });
     }
   };
 
   const handleRestoreVersion = async (versionId: string) => {
     if (!promptId) return;
-    
     try {
       await dbHelpers.restorePromptVersion(promptId, versionId);
-      await loadPrompt(); // Reload the prompt data
+      await loadPrompt();
       setIsVersionsOpen(false);
-      toast({
-        title: "Version restored",
-        description: "The selected version has been restored.",
-      });
-    } catch (error) {
-      toast({
-        title: "Restore failed",
-        description: "Unable to restore version.",
-        variant: "destructive",
-      });
+      toast({ title: "Version restored" });
+    } catch {
+      toast({ title: "Restore failed", variant: "destructive" });
     }
   };
 
+  const canSave = title.trim() && content.trim();
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigate(`/project/${projectId}`)}
-                className="shrink-0"
-              >
-                <ArrowLeft className="h-4 w-4" />
+      <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
+        <div className="px-4 py-3 flex items-center justify-between gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/project/${projectId}`)}
+            className="shrink-0 -ml-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            <span className="text-sm">Back</span>
+          </Button>
+
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {isEdit && isSaved && (
+              <span className="flex items-center gap-1 text-primary">
+                <Check className="h-3 w-3" /> Saved
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsFavorite(v => !v)}
+              className={cn(isFavorite && "text-primary")}
+              aria-label="Favorite"
+            >
+              <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
+            </Button>
+            {isEdit && (
+              <Button variant="ghost" size="sm" onClick={handleViewVersions} aria-label="History">
+                <History className="h-4 w-4" />
               </Button>
-              <h1 className="text-base font-semibold truncate">
-                {isEdit ? "Edit Prompt" : "Create Prompt"}
-              </h1>
-            </div>
-            
-            <div className="flex items-center gap-2 shrink-0">
-              {isEdit && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleViewVersions}
-                  className="hidden sm:flex"
-                >
-                  <History className="h-4 w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Versions</span>
-                </Button>
-              )}
-              <Button 
-                onClick={handleSave} 
-                disabled={isLoading || !title.trim() || !content.trim()}
-                size="sm"
-                className="min-w-[4rem]"
-              >
-                {isSaved ? (
-                  <>
-                    <Check className="h-4 w-4 sm:mr-1" />
-                    <span className="hidden sm:inline">Saved</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 sm:mr-1" />
-                    <span className="hidden sm:inline">Save</span>
-                  </>
-                )}
-              </Button>
-            </div>
+            )}
+            <Button
+              onClick={handleSave}
+              disabled={isLoading || !canSave}
+              size="sm"
+              className="rounded-full px-4"
+            >
+              <Save className="h-4 w-4 mr-1.5" />
+              Save
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Editor Content */}
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 min-h-[calc(100vh-80px)]">
-        {/* Title Input */}
-        <div className="mb-6">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Untitled prompt..."
-            className="w-full text-xl sm:text-2xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/60 resize-none"
-            style={{ fontFamily: 'inherit' }}
-          />
+      {/* Editor */}
+      <div className="flex-1 max-w-3xl w-full mx-auto px-5 pt-8 pb-32">
+        {/* Title */}
+        <textarea
+          ref={titleRef}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Untitled prompt"
+          rows={1}
+          className={cn(
+            "w-full resize-none bg-transparent outline-none border-0 p-0",
+            "text-3xl sm:text-4xl font-semibold leading-tight tracking-tight",
+            "placeholder:text-muted-foreground/40"
+          )}
+        />
+
+        {/* Meta row */}
+        <div className="mt-4 mb-6 flex items-center gap-2 flex-wrap">
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="text-xs rounded-full border border-border bg-secondary px-3 py-1.5 outline-none hover:border-foreground/30 transition-colors cursor-pointer"
+          >
+            {PROMPT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select
+            value={format}
+            onChange={(e) => setFormat(e.target.value as 'text' | 'json')}
+            className="text-xs rounded-full border border-border bg-secondary px-3 py-1.5 outline-none hover:border-foreground/30 transition-colors cursor-pointer"
+          >
+            <option value="text">Text</option>
+            <option value="json">JSON</option>
+          </select>
+          {tags.length > 0 && (
+            <div className="flex items-center gap-1 flex-wrap">
+              {tags.slice(0, 6).map(tag => (
+                <Badge key={tag} variant="secondary" className="text-xs gap-0.5 rounded-full">
+                  <Hash className="h-3 w-3" />{tag}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Content Editor */}
-        <div className="relative min-h-[500px]">
-          <div
-            ref={contentRef}
-            contentEditable
-            onInput={handleContentChange}
-            onBlur={applyHashtagHighlighting}
-            data-placeholder="Write your prompt here... Use #tags to organize your content."
-            className={cn(
-              "w-full min-h-[500px] p-0 text-base sm:text-lg leading-relaxed",
-              "outline-none resize-none",
-              "placeholder:text-muted-foreground/60 bg-transparent",
-              "prose prose-lg max-w-none",
-              "[&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-muted-foreground/60 [&:empty]:before:pointer-events-none"
-            )}
-            style={{ 
-              fontFamily: 'inherit',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word'
-            }}
-          />
-        </div>
+        {/* Divider */}
+        <div className="h-px bg-border mb-6" />
+
+        {/* Content */}
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Write your prompt here… Use #tags anywhere to organize."
+          className={cn(
+            "w-full min-h-[60vh] resize-none bg-transparent outline-none border-0 p-0",
+            "text-base sm:text-lg leading-relaxed",
+            "placeholder:text-muted-foreground/40 font-mono"
+          )}
+          style={{
+            fontFamily: format === 'json'
+              ? 'ui-monospace, SFMono-Regular, Menlo, monospace'
+              : 'inherit',
+          }}
+        />
       </div>
 
       {/* Version History Modal */}
@@ -367,36 +277,23 @@ export function PromptEditor() {
           <DialogHeader>
             <DialogTitle>Version History</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {versions.map((version, index) => (
-              <div
-                key={version.versionId}
-                className="p-4 border border-border rounded-lg space-y-2"
-              >
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {versions.map((version) => (
+              <div key={version.versionId} className="p-4 border border-border rounded-xl space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-medium">{version.title}</h4>
-                    <p className="text-xs text-muted-foreground">
-                      {version.timestamp.toLocaleString()}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{version.timestamp.toLocaleString()}</p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRestoreVersion(version.versionId)}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => handleRestoreVersion(version.versionId)}>
                     Restore
                   </Button>
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-3">
-                  {version.content}
-                </p>
+                <p className="text-sm text-muted-foreground line-clamp-3">{version.content}</p>
               </div>
             ))}
             {versions.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">
-                No versions available
-              </p>
+              <p className="text-center text-muted-foreground py-8">No versions yet</p>
             )}
           </div>
         </DialogContent>
