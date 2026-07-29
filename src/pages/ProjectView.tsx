@@ -346,7 +346,7 @@ export default function ProjectView() {
                 <PromptCard
                   key={prompt.id}
                   prompt={prompt}
-                  onEdit={() => {}}
+                  onEdit={() => handleEditPrompt(prompt)}
                   onDelete={() => handleDeletePrompt(prompt)}
                   onToggleFavorite={() => dbHelpers.togglePromptFavorite(prompt.id).then(loadData)}
                   onIncrementUsage={() => dbHelpers.incrementPromptUsage(prompt.id).then(loadData)}
