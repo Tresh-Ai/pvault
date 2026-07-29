@@ -261,69 +261,71 @@ export default function ProjectView() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
-        <div className="px-5 pt-6 pb-4">
-          <button
-            onClick={() => navigate('/')}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 mb-4"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            All projects
-          </button>
-
-          <div className="mb-5">
-            <h1 className="text-3xl font-semibold tracking-tight">{project.name}</h1>
-            {project.description && (
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{project.description}</p>
-            )}
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="h-12 flex items-center gap-2">
+            <button
+              onClick={() => navigate('/')}
+              aria-label="All projects"
+              className="shrink-0 h-8 w-8 -ml-1 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <h1 className="text-base font-semibold tracking-tight truncate">{project.name}</h1>
           </div>
 
-          {/* Segmented tabs */}
-          <div className="inline-flex bg-secondary rounded-full p-1 mb-4 w-full sm:w-auto">
-            <button
-              onClick={() => setActiveTab("prompts")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                activeTab === "prompts"
-                  ? "bg-background text-foreground shadow-card"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <FileText className="h-3.5 w-3.5" />
-              Prompts
-              <span className="text-xs opacity-60">{prompts.length}</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("tools")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                activeTab === "tools"
-                  ? "bg-background text-foreground shadow-card"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Wrench className="h-3.5 w-3.5" />
-              Tools
-              <span className="text-xs opacity-60">{tools.length}</span>
-            </button>
-          </div>
+          <div className="pb-3 space-y-2">
+            <div className="flex gap-2 items-center">
+              <SearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder={`Search ${activeTab}...`}
+                className="flex-1 min-w-0"
+              />
+              <FilterDropdown
+                title={`Filter ${activeTab}`}
+                options={activeTab === "prompts" ? getPromptFilterOptions() : getToolFilterOptions()}
+                selectedFilters={selectedFilters}
+                onFiltersChange={setSelectedFilters}
+              />
+            </div>
 
-          <div className="flex gap-2">
-            <SearchInput
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder={`Search ${activeTab}...`}
-              className="flex-1"
-            />
-            <FilterDropdown
-              title={`Filter ${activeTab}`}
-              options={activeTab === "prompts" ? getPromptFilterOptions() : getToolFilterOptions()}
-              selectedFilters={selectedFilters}
-              onFiltersChange={setSelectedFilters}
-            />
+            {/* Segmented tabs */}
+            <div className="flex bg-secondary rounded-full p-1 w-full">
+              <button
+                onClick={() => { setActiveTab("prompts"); setSelectedFilters([]); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  activeTab === "prompts"
+                    ? "bg-background text-foreground shadow-card"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Prompts
+                <span className="text-xs opacity-60">{prompts.length}</span>
+              </button>
+              <button
+                onClick={() => { setActiveTab("tools"); setSelectedFilters([]); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  activeTab === "tools"
+                    ? "bg-background text-foreground shadow-card"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <Wrench className="h-3.5 w-3.5" />
+                Tools
+                <span className="text-xs opacity-60">{tools.length}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="px-5 py-6 pb-28">
+      <div className="max-w-2xl mx-auto px-4 py-5 pb-28">
+        {project.description && (
+          <p className="text-sm text-muted-foreground mb-4">{project.description}</p>
+        )}
+
         {activeTab === "prompts" ? (
           filteredPrompts.length === 0 ? (
             <div className="text-center py-20 max-w-sm mx-auto">
