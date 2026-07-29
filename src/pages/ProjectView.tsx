@@ -184,9 +184,14 @@ export default function ProjectView() {
     });
   };
 
-  const handleCreatePrompt = (category: string, format: 'text' | 'json') => {
+  const handleCreatePrompt = (category: string, format: 'text' | 'json' | 'markdown') => {
     navigate(`/project/${projectId}/prompt/new?category=${category}&format=${format}`);
   };
+
+  const handleEditPrompt = (prompt: Prompt) => {
+    navigate(`/project/${projectId}/prompt/edit?promptId=${prompt.id}`);
+  };
+
 
   // Get filter options
   const getPromptFilterOptions = () => {
