@@ -6,15 +6,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
 
+type Format = 'text' | 'json' | 'markdown';
+
 interface PromptCreationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onContinue: (category: string, format: 'text' | 'json') => void;
+  onContinue: (category: string, format: Format) => void;
 }
 
 export function PromptCreationModal({ open, onOpenChange, onContinue }: PromptCreationModalProps) {
   const [category, setCategory] = useState("Other");
-  const [format, setFormat] = useState<'text' | 'json'>('text');
+  const [format, setFormat] = useState<Format>('text');
 
   const handleContinue = () => {
     onContinue(category, format);

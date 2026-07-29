@@ -123,6 +123,20 @@
   }
 }
 
+@layer base {
+  /* No focus rings/outlines on text entry surfaces — keep a subtle bg shift instead */
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible,
+  [contenteditable]:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+}
+
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -131,4 +145,22 @@
     background-image: radial-gradient(hsl(var(--border)) 1px, transparent 1px);
     background-size: 24px 24px;
   }
+
+  /* Markdown preview */
+  .prose-pvault h1 { @apply text-2xl font-semibold mt-6 mb-3 tracking-tight; }
+  .prose-pvault h2 { @apply text-xl font-semibold mt-6 mb-2 tracking-tight; }
+  .prose-pvault h3 { @apply text-lg font-semibold mt-5 mb-2; }
+  .prose-pvault p { @apply mb-4 leading-relaxed; }
+  .prose-pvault ul { @apply list-disc pl-5 mb-4 space-y-1; }
+  .prose-pvault ol { @apply list-decimal pl-5 mb-4 space-y-1; }
+  .prose-pvault a { @apply text-primary underline underline-offset-2; }
+  .prose-pvault strong { @apply font-semibold; }
+  .prose-pvault blockquote { @apply border-l-2 border-border pl-4 italic text-muted-foreground mb-4; }
+  .prose-pvault code { @apply bg-secondary rounded px-1.5 py-0.5 text-sm font-mono; }
+  .prose-pvault pre { @apply bg-secondary rounded-xl p-4 overflow-x-auto mb-4; }
+  .prose-pvault pre code { @apply bg-transparent p-0; }
+  .prose-pvault hr { @apply border-border my-6; }
+  .prose-pvault table { @apply w-full text-sm mb-4; }
+  .prose-pvault th, .prose-pvault td { @apply border border-border px-3 py-1.5 text-left; }
 }
+
