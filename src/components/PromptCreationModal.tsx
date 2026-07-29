@@ -49,12 +49,13 @@ export function PromptCreationModal({ open, onOpenChange, onContinue }: PromptCr
           <div>
             <Label htmlFor="format" className="text-base font-medium">Format</Label>
             <p className="text-sm text-muted-foreground mb-3">What type of content will this be?</p>
-            <Select value={format} onValueChange={(value) => setFormat(value as 'text' | 'json')}>
+            <Select value={format} onValueChange={(value) => setFormat(value as Format)}>
               <SelectTrigger id="format">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="text">Text</SelectItem>
+                <SelectItem value="markdown">Markdown</SelectItem>
                 <SelectItem value="json">JSON</SelectItem>
               </SelectContent>
             </Select>

@@ -9,9 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Settings, Plus, Trash2 } from "lucide-react";
+import { Settings, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import logo from "icon-192.png";
+import { Logo } from "@/components/logo";
+import { Newsletter } from "@/components/newsletter";
 
 interface ProjectsList {
   onProjectSelect: (project: Project) => void;
