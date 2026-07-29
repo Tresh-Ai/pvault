@@ -6,15 +6,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
 
+type Format = 'text' | 'json' | 'markdown';
+
 interface PromptCreationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onContinue: (category: string, format: 'text' | 'json') => void;
+  onContinue: (category: string, format: Format) => void;
 }
 
 export function PromptCreationModal({ open, onOpenChange, onContinue }: PromptCreationModalProps) {
   const [category, setCategory] = useState("Other");
-  const [format, setFormat] = useState<'text' | 'json'>('text');
+  const [format, setFormat] = useState<Format>('text');
 
   const handleContinue = () => {
     onContinue(category, format);
@@ -47,12 +49,13 @@ export function PromptCreationModal({ open, onOpenChange, onContinue }: PromptCr
           <div>
             <Label htmlFor="format" className="text-base font-medium">Format</Label>
             <p className="text-sm text-muted-foreground mb-3">What type of content will this be?</p>
-            <Select value={format} onValueChange={(value) => setFormat(value as 'text' | 'json')}>
+            <Select value={format} onValueChange={(value) => setFormat(value as Format)}>
               <SelectTrigger id="format">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="text">Text</SelectItem>
+                <SelectItem value="markdown">Markdown</SelectItem>
                 <SelectItem value="json">JSON</SelectItem>
               </SelectContent>
             </Select>

@@ -9,9 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Settings, Plus, Trash2 } from "lucide-react";
+import { Settings, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import logo from "icon-192.png";
+import { Logo } from "@/components/logo";
+import { Newsletter } from "@/components/newsletter";
 
 interface ProjectsList {
   onProjectSelect: (project: Project) => void;
@@ -123,32 +124,29 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
-        <div className="px-5 pt-6 pb-4">
-          <div className="flex items-center justify-between mb-5">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="h-12 flex items-center justify-between">
+            <Logo withWordmark />
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-xs font-medium tracking-widest uppercase text-muted-foreground">
-                PVault
-              </span>
+              <span className="text-[10px] font-medium tracking-widest uppercase text-muted-foreground">v2.0</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onSettingsClick}
+                className="h-8 w-8 p-0 rounded-full"
+                aria-label="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" onClick={onSettingsClick} className="h-9 w-9 p-0 rounded-full">
-              <Settings className="h-4 w-4" />
-            </Button>
           </div>
 
-          <div className="mb-5">
-            <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {projects.length} {projects.length === 1 ? 'vault' : 'vaults'}
-            </p>
-          </div>
-
-          <div className="flex gap-2">
+          <div className="pb-3 flex gap-2 items-center">
             <SearchInput
               value={searchQuery}
               onChange={setSearchQuery}
               placeholder="Search projects..."
-              className="flex-1"
+              className="flex-1 min-w-0"
             />
             <FilterDropdown
               title="Filter projects"
@@ -164,13 +162,20 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
       </div>
 
       {/* Content */}
-      <div className="px-5 py-6 pb-28">
+      <div className="max-w-2xl mx-auto px-4 py-5 pb-28">
+        <div className="flex items-baseline justify-between mb-4">
+          <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
+          <span className="text-xs text-muted-foreground">
+            {projects.length} {projects.length === 1 ? 'vault' : 'vaults'}
+          </span>
+        </div>
+
         {filteredProjects.length === 0 ? (
-          <div className="text-center py-20 max-w-sm mx-auto">
-            <div className="w-14 h-14 mx-auto bg-secondary border border-border rounded-2xl flex items-center justify-center mb-5">
+          <div className="text-center py-16 max-w-sm mx-auto">
+            <div className="w-14 h-14 mx-auto bg-secondary rounded-2xl flex items-center justify-center mb-5">
               <Plus className="h-6 w-6 text-primary" strokeWidth={2.5} />
             </div>
-            <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
+            <h2 className="text-lg font-semibold mb-2">No projects yet</h2>
             <p className="text-sm text-muted-foreground">
               Tap the button below to create your first vault.
             </p>
@@ -189,7 +194,12 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
             ))}
           </div>
         )}
+
+        <div className="mt-8">
+          <Newsletter />
+        </div>
       </div>
+
 
       {/* Create Project Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

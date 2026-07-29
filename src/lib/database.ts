@@ -24,7 +24,7 @@ export interface Prompt {
   content: string;
   tags: string[];
   category: string;
-  format: 'text' | 'json';
+  format: 'text' | 'json' | 'markdown';
   createdAt: Date;
   updatedAt: Date;
   lastUsedAt?: Date;
