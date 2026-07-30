@@ -12,7 +12,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, FileText, Wrench } from "lucide-react";
+import { ArrowLeft, Plus, FileText, Wrench, GitBranch, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Workflow, workflowHelpers } from "@/lib/workflows";
+import { WorkflowCard } from "@/components/workflow-card";
 import { useToast } from "@/hooks/use-toast";
 import { PromptCreationModal } from "@/components/PromptCreationModal";
 import { FilterDropdown } from "@/components/ui/filter-dropdown";
@@ -27,6 +30,9 @@ export default function ProjectView() {
   const [activeTab, setActiveTab] = useState("prompts");
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [tools, setTools] = useState<Tool[]>([]);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
+  const [projectForm, setProjectForm] = useState({ name: "", description: "", tags: "" });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [isCreateToolOpen, setIsCreateToolOpen] = useState(false);
@@ -54,10 +60,11 @@ export default function ProjectView() {
     if (!projectId) return;
     
     try {
-      const [allProjects, projectPrompts, projectTools] = await Promise.all([
+      const [allProjects, projectPrompts, projectTools, projectWorkflows] = await Promise.all([
         dbHelpers.getAllProjects(),
         dbHelpers.getProjectPrompts(projectId),
         dbHelpers.getProjectTools(projectId),
+        workflowHelpers.getProjectWorkflows(projectId),
       ]);
       
       const currentProject = allProjects.find(p => p.id === projectId);
@@ -69,6 +76,12 @@ export default function ProjectView() {
       setProject(currentProject);
       setPrompts(projectPrompts);
       setTools(projectTools);
+      setWorkflows(projectWorkflows);
+      setProjectForm({
+        name: currentProject.name,
+        description: currentProject.description || "",
+        tags: currentProject.tags.join(", "),
+      });
     } catch (error) {
       toast({
         title: "Error loading data",
@@ -184,6 +197,39 @@ export default function ProjectView() {
     });
   };
 
+  const handleUpdateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!projectId || !projectForm.name.trim()) return;
+    await dbHelpers.updateProject(projectId, {
+      name: projectForm.name.trim(),
+      description: projectForm.description.trim() || undefined,
+      tags: projectForm.tags.split(',').map(t => t.trim()).filter(Boolean),
+    });
+    await loadData();
+    setIsEditProjectOpen(false);
+    toast({ title: "Project updated" });
+  };
+
+  const handleDeleteProject = async () => {
+    if (!projectId) return;
+    if (!confirm("Delete this project and everything inside it?")) return;
+    await dbHelpers.deleteProject(projectId);
+    await workflowHelpers.deleteProjectWorkflows(projectId);
+    navigate('/');
+  };
+
+  const handleCreateWorkflow = async () => {
+    if (!projectId) return;
+    const wf = await workflowHelpers.createWorkflow({ projectId, name: "New workflow" });
+    navigate(`/project/${projectId}/workflow/${wf.id}`);
+  };
+
+  const handleDeleteWorkflow = async (id: string) => {
+    await workflowHelpers.deleteWorkflow(id);
+    setWorkflows(prev => prev.filter(w => w.id !== id));
+    toast({ title: "Workflow deleted" });
+  };
+
   const handleCreatePrompt = (category: string, format: 'text' | 'json' | 'markdown') => {
     navigate(`/project/${projectId}/prompt/new?category=${category}&format=${format}`);
   };
@@ -275,7 +321,25 @@ export default function ProjectView() {
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <h1 className="text-base font-semibold tracking-tight truncate">{project.name}</h1>
+            <h1 className="text-base font-semibold tracking-tight truncate flex-1">{project.name}</h1>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  aria-label="Project menu"
+                  className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsEditProjectOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-2" /> Edit project
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDeleteProject} className="text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete project
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="pb-3 space-y-2">
@@ -286,12 +350,12 @@ export default function ProjectView() {
                 placeholder={`Search ${activeTab}...`}
                 className="flex-1 min-w-0"
               />
-              <FilterDropdown
+              {activeTab !== "workflows" && <FilterDropdown
                 title={`Filter ${activeTab}`}
                 options={activeTab === "prompts" ? getPromptFilterOptions() : getToolFilterOptions()}
                 selectedFilters={selectedFilters}
                 onFiltersChange={setSelectedFilters}
-              />
+              />}
             </div>
 
             {/* Segmented tabs */}
@@ -320,6 +384,18 @@ export default function ProjectView() {
                 Tools
                 <span className="text-xs opacity-60">{tools.length}</span>
               </button>
+              <button
+                onClick={() => { setActiveTab("workflows"); setSelectedFilters([]); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  activeTab === "workflows"
+                    ? "bg-background text-foreground shadow-card"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <GitBranch className="h-3.5 w-3.5" />
+                Flows
+                <span className="text-xs opacity-60">{workflows.length}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -331,7 +407,36 @@ export default function ProjectView() {
           <p className="text-sm text-muted-foreground mb-4">{project.description}</p>
         )}
 
-        {activeTab === "prompts" ? (
+        {activeTab === "workflows" ? (
+          workflows.length === 0 ? (
+            <div className="text-center py-20 max-w-sm mx-auto">
+              <div className="w-14 h-14 mx-auto bg-secondary border border-border rounded-2xl flex items-center justify-center mb-5">
+                <GitBranch className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No workflows yet</h3>
+              <p className="text-sm text-muted-foreground mb-5">
+                Chain prompts and tools into a repeatable sequence you can run step by step.
+              </p>
+              <Button onClick={handleCreateWorkflow} className="rounded-full">
+                <Plus className="h-4 w-4 mr-1.5" /> New workflow
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {workflows
+                .filter(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map((workflow) => (
+                  <WorkflowCard
+                    key={workflow.id}
+                    workflow={workflow}
+                    onOpen={() => navigate(`/project/${projectId}/workflow/${workflow.id}`)}
+                    onEdit={() => navigate(`/project/${projectId}/workflow/${workflow.id}`)}
+                    onDelete={() => handleDeleteWorkflow(workflow.id)}
+                  />
+                ))}
+            </div>
+          )
+        ) : activeTab === "prompts" ? (
           filteredPrompts.length === 0 ? (
             <div className="text-center py-20 max-w-sm mx-auto">
               <div className="w-14 h-14 mx-auto bg-secondary border border-border rounded-2xl flex items-center justify-center mb-5">
@@ -379,7 +484,13 @@ export default function ProjectView() {
 
       {/* FAB */}
       <FloatingActionButton
-        onClick={() => activeTab === "prompts" ? setIsCreatePromptOpen(true) : setIsCreateToolOpen(true)}
+        onClick={() =>
+          activeTab === "prompts"
+            ? setIsCreatePromptOpen(true)
+            : activeTab === "tools"
+              ? setIsCreateToolOpen(true)
+              : handleCreateWorkflow()
+        }
       />
 
       {/* Create Prompt Modal */}
@@ -468,6 +579,50 @@ export default function ProjectView() {
                   setToolForm({ name: "", url: "", category: "", notes: "", tags: "" });
                 }}
               >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Project Dialog */}
+      <Dialog open={isEditProjectOpen} onOpenChange={setIsEditProjectOpen}>
+        <DialogContent className="w-[90vw] max-w-lg rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateProject} className="space-y-4">
+            <div>
+              <Label htmlFor="project-name">Name</Label>
+              <Input
+                id="project-name"
+                value={projectForm.name}
+                onChange={(e) => setProjectForm(prev => ({ ...prev, name: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="project-desc">Description</Label>
+              <Textarea
+                id="project-desc"
+                rows={3}
+                value={projectForm.description}
+                onChange={(e) => setProjectForm(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="project-tags">Tags</Label>
+              <Input
+                id="project-tags"
+                value={projectForm.tags}
+                onChange={(e) => setProjectForm(prev => ({ ...prev, tags: e.target.value }))}
+                placeholder="Comma separated"
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button type="submit" className="flex-1">Save changes</Button>
+              <Button type="button" variant="outline" onClick={() => setIsEditProjectOpen(false)}>
                 Cancel
               </Button>
             </div>
