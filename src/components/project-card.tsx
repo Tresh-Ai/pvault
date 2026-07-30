@@ -2,17 +2,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Project } from "@/lib/database";
-import { FileText, Wrench, MoreVertical, Trash2, ChevronRight } from "lucide-react";
+import { FileText, Wrench, MoreVertical, Trash2, ChevronRight, Pencil } from "lucide-react";
 
 interface ProjectCardProps {
   project: Project;
   promptCount: number;
   toolCount: number;
   onClick: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
 }
 
-export function ProjectCard({ project, promptCount, toolCount, onClick, onDelete }: ProjectCardProps) {
+export function ProjectCard({ project, promptCount, toolCount, onClick, onEdit, onDelete }: ProjectCardProps) {
   const handleCardClick = (e: React.MouseEvent) => {
     if (!(e.target as Element).closest('[data-dropdown-trigger]')) onClick();
   };
@@ -20,7 +21,7 @@ export function ProjectCard({ project, promptCount, toolCount, onClick, onDelete
   return (
     <div
       onClick={handleCardClick}
-      className="group cursor-pointer rounded-2xl border border-border bg-card p-5 transition-all hover:border-foreground/20 hover:shadow-card active:scale-[0.995]"
+      className="cursor-pointer rounded-2xl border border-border bg-card p-5 transition-all hover:border-foreground/20 hover:shadow-card active:scale-[0.995]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -53,29 +54,37 @@ export function ProjectCard({ project, promptCount, toolCount, onClick, onDelete
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          {onDelete && (
+          {(onEdit || onDelete) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild data-dropdown-trigger>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                  className="h-8 w-8 p-0 text-muted-foreground"
+                  aria-label="Project menu"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                  className="text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete
-                </DropdownMenuItem>
+                {onEdit && (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+                    <Pencil className="h-4 w-4 mr-2" /> Edit project
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <DropdownMenuItem
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </div>
       </div>
     </div>

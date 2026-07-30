@@ -1,6 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, FileText, Wrench, Download, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  FileText,
+  Wrench,
+  Download,
+  Sparkles,
+  Eye,
+  GitBranch,
+  Smartphone,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface OnboardingSlidesProps {
@@ -17,22 +27,43 @@ const slides = [
       "Save prompts with tags, categories, and usage tracking. Search instantly across everything.",
   },
   {
+    icon: Eye,
+    tag: "02 — Write",
+    title: "Markdown editor with live preview.",
+    description:
+      "Write in plain text, JSON, or markdown. Toggle preview to see formatted headings, lists, and code blocks — and autosave keeps every keystroke.",
+  },
+  {
     icon: Wrench,
-    tag: "02 — Organize",
+    tag: "03 — Organize",
     title: "Tools & prompts, side by side.",
     description:
       "Group everything by project. Your AI stack, arranged the way your brain works.",
   },
   {
+    icon: GitBranch,
+    tag: "04 — Workflows",
+    title: "Chain prompts into workflows.",
+    description:
+      "Build repeatable sequences of prompts and tools, then run them step by step with one-tap copy.",
+  },
+  {
     icon: Download,
-    tag: "03 — Reuse",
+    tag: "05 — Reuse",
     title: "Copy, export, ship.",
     description:
-      "One tap to copy. Export any project as .txt or .json. Your data, always portable.",
+      "One tap to copy. Export any prompt as .txt, .md, or .json. Your data, always portable.",
+  },
+  {
+    icon: Smartphone,
+    tag: "06 — Install",
+    title: "Install it as an app.",
+    description:
+      "Add PVault to your home screen and it runs full-screen and fully offline — no connection needed, ever.",
   },
   {
     icon: Sparkles,
-    tag: "04 — Private",
+    tag: "07 — Private",
     title: "Fully offline. Fully yours.",
     description:
       "Everything lives on your device. No accounts, no tracking, no cloud lock-in.",
