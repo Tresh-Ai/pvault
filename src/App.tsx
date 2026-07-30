@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { PromptEditor } from "./components/PromptEditor";
 import ProjectView from "./pages/ProjectView";
+import WorkflowView from "./pages/WorkflowView";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/project/:projectId" element={<ProjectView />} />
           <Route path="/project/:projectId/prompt/new" element={<PromptEditor />} />
           <Route path="/project/:projectId/prompt/edit" element={<PromptEditor />} />
+          <Route path="/project/:projectId/workflow/:workflowId" element={<WorkflowView />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
