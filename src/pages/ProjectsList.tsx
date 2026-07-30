@@ -13,6 +13,8 @@ import { Settings, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
 import { Newsletter } from "@/components/newsletter";
+import { InstallPrompt } from "@/components/install-prompt";
+import { workflowHelpers } from "@/lib/workflows";
 
 interface ProjectsList {
   onProjectSelect: (project: Project) => void;
@@ -27,6 +29,7 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const [newProjectTags, setNewProjectTags] = useState("");
   const [projectCounts, setProjectCounts] = useState<Record<string, { prompts: number; tools: number }>>({});
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -89,10 +92,47 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
     }
   };
 
+  const startEditProject = (project: Project) => {
+    setEditingProject(project);
+    setNewProjectName(project.name);
+    setNewProjectDescription(project.description || "");
+    setNewProjectTags(project.tags.join(", "));
+  };
+
+  const resetForm = () => {
+    setEditingProject(null);
+    setNewProjectName("");
+    setNewProjectDescription("");
+    setNewProjectTags("");
+  };
+
+  const handleUpdateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProject || !newProjectName.trim()) return;
+
+    try {
+      await dbHelpers.updateProject(editingProject.id, {
+        name: newProjectName.trim(),
+        description: newProjectDescription.trim() || undefined,
+        tags: newProjectTags.split(',').map(tag => tag.trim()).filter(Boolean),
+      });
+      await loadProjects();
+      resetForm();
+      toast({ title: "Project updated" });
+    } catch (error) {
+      toast({
+        title: "Error updating project",
+        description: "Unable to update project.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteProject = async (projectId: string) => {
     if (confirm('Are you sure you want to delete this project? This will also delete all prompts and tools in this project.')) {
       try {
         await dbHelpers.deleteProject(projectId);
+        await workflowHelpers.deleteProjectWorkflows(projectId);
         setProjects(prev => prev.filter(p => p.id !== projectId));
         setProjectCounts(prev => {
           const updated = { ...prev };
@@ -189,28 +229,38 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
                 promptCount={projectCounts[project.id]?.prompts || 0}
                 toolCount={projectCounts[project.id]?.tools || 0}
                 onClick={() => onProjectSelect(project)}
+                onEdit={() => startEditProject(project)}
                 onDelete={() => handleDeleteProject(project.id)}
               />
             ))}
           </div>
         )}
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-4">
+          <InstallPrompt />
           <Newsletter />
         </div>
       </div>
 
 
       {/* Create Project Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+      <Dialog
+        open={isCreateDialogOpen || !!editingProject}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsCreateDialogOpen(false);
+            resetForm();
+          }
+        }}
+      >
         <DialogTrigger asChild>
           <FloatingActionButton onClick={() => setIsCreateDialogOpen(true)} />
         </DialogTrigger>
         <DialogContent className="w-[90vw] max-w-lg rounded-lg">
           <DialogHeader>
-            <DialogTitle>Create New Project</DialogTitle>
+            <DialogTitle>{editingProject ? "Edit Project" : "Create New Project"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateProject} className="space-y-4">
+          <form onSubmit={editingProject ? handleUpdateProject : handleCreateProject} className="space-y-4">
             <div>
               <Label htmlFor="name">Project Name</Label>
               <Input
@@ -241,11 +291,13 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
               />
             </div>
             <div className="flex gap-2 pt-4">
-              <Button type="submit" className="flex-1">Create Project</Button>
+              <Button type="submit" className="flex-1">
+                {editingProject ? "Save changes" : "Create Project"}
+              </Button>
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setIsCreateDialogOpen(false)}
+                onClick={() => { setIsCreateDialogOpen(false); resetForm(); }}
               >
                 Cancel
               </Button>
