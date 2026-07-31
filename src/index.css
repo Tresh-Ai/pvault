@@ -160,6 +160,13 @@
   .prose-pvault pre { @apply bg-secondary rounded-xl p-4 overflow-x-auto mb-4; }
   .prose-pvault pre code { @apply bg-transparent p-0; }
   .prose-pvault hr { @apply border-border my-6; }
+  .prose-pvault li > p { @apply mb-0; }
+  .prose-pvault li::marker { @apply text-muted-foreground; }
+  .prose-pvault ul.contains-task-list { @apply list-none pl-0; }
+  .prose-pvault li.task-list-item { @apply flex items-start gap-2; }
+  .prose-pvault input[type="checkbox"] { @apply mt-1 h-4 w-4 rounded accent-current; }
+  .prose-pvault del { @apply line-through text-muted-foreground; }
+  .prose-pvault br { @apply block; }
   .prose-pvault table { @apply w-full text-sm mb-4; }
   .prose-pvault th, .prose-pvault td { @apply border border-border px-3 py-1.5 text-left; }
 }

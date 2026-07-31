@@ -4,7 +4,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Moon, Sun, Monitor, Trash2, Download } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Monitor, Trash2, Download, ScrollText, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { dbHelpers } from "@/lib/database";
 
@@ -17,8 +18,10 @@ export function Settings({ onBack }: SettingsProps) {
     theme: 'light' as 'light' | 'dark' | 'system',
     sortPreference: 'mostRecent' as 'mostRecent' | 'mostUsed' | 'alpha',
     protectWithPIN: false,
+    autosaveInterval: 1200,
   });
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadSettings();
@@ -224,6 +227,30 @@ export function Settings({ onBack }: SettingsProps) {
                 </SelectContent>
               </Select>
             </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Autosave</p>
+                <p className="text-sm text-muted-foreground">How often the editor saves while you type</p>
+              </div>
+              <Select
+                value={String(settings.autosaveInterval ?? 1200)}
+                onValueChange={(value) => updateSetting('autosaveInterval', Number(value))}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="600">Instant (0.6s)</SelectItem>
+                  <SelectItem value="1200">Fast (1.2s)</SelectItem>
+                  <SelectItem value="3000">Relaxed (3s)</SelectItem>
+                  <SelectItem value="10000">Slow (10s)</SelectItem>
+                  <SelectItem value="0">Off (manual only)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
 
@@ -255,10 +282,22 @@ export function Settings({ onBack }: SettingsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>Version 1.0.0</p>
+              <p>Version 1.0</p>
               <p>Your offline AI prompt vault</p>
               <p>All data is stored locally on your device</p>
             </div>
+            <Separator className="my-4" />
+            <Button
+              variant="outline"
+              className="w-full justify-between"
+              onClick={() => navigate('/changelog')}
+            >
+              <span className="flex items-center">
+                <ScrollText className="h-4 w-4 mr-2" />
+                Changelog
+              </span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </CardContent>
         </Card>
       </div>
