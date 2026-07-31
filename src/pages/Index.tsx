@@ -4,10 +4,12 @@ import { ProjectsList } from "./ProjectsList";
 import { Settings } from "./Settings";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { ProductTour, hasSeenTour } from "@/components/product-tour";
 
 const Index = () => {
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
+  const [showTour, setShowTour] = useState(false);
   const { state: onboardingState, completeOnboarding } = useOnboarding();
 
   // Apply theme to document
@@ -45,7 +47,13 @@ const Index = () => {
     }
     
     completeOnboarding(theme);
+    setShowTour(true);
   };
+
+  // Existing users who completed onboarding earlier still get the tour once
+  useEffect(() => {
+    if (onboardingState.isCompleted && !hasSeenTour()) setShowTour(true);
+  }, [onboardingState.isCompleted]);
 
   // Show onboarding if not completed
   if (!onboardingState.isCompleted) {
@@ -62,6 +70,7 @@ const Index = () => {
           onSettingsClick={() => setShowSettings(true)}
         />
       )}
+      {showTour && !showSettings && <ProductTour onFinish={() => setShowTour(false)} />}
     </div>
   );
 };

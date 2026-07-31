@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import { PromptEditor } from "./components/PromptEditor";
 import ProjectView from "./pages/ProjectView";
 import WorkflowView from "./pages/WorkflowView";
+import Changelog from "./pages/Changelog";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/changelog" element={<Changelog />} />
           <Route path="/project/:projectId" element={<ProjectView />} />
           <Route path="/project/:projectId/prompt/new" element={<PromptEditor />} />
           <Route path="/project/:projectId/prompt/edit" element={<PromptEditor />} />
