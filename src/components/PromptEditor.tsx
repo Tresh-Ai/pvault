@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
 import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2 } from "lucide-react";
+import { MarkdownToolbar } from "@/components/markdown-toolbar";
+import { MarkdownPreview } from "@/components/markdown-preview";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -36,10 +36,20 @@ export function PromptEditor() {
   const [isVersionsOpen, setIsVersionsOpen] = useState(false);
   const [versions, setVersions] = useState<PromptVersion[]>([]);
 
+  const [autosaveInterval, setAutosaveInterval] = useState(1200);
+
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout>>();
   const isDirty = useRef(false);
   const { toast } = useToast();
+
+  // Autosave frequency from settings
+  useEffect(() => {
+    dbHelpers.getSettings().then(s => {
+      if (typeof s.autosaveInterval === 'number') setAutosaveInterval(s.autosaveInterval);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (initialPromptId && projectId) {
@@ -109,6 +119,7 @@ export function PromptEditor() {
   useEffect(() => {
     if (!isDirty.current) return;
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    if (autosaveInterval === 0) return;
     if (!title.trim() && !content.trim()) return;
 
     setSaveState('idle');
@@ -121,12 +132,12 @@ export function PromptEditor() {
         console.error('Autosave failed:', error);
         setSaveState('idle');
       }
-    }, 1200);
+    }, autosaveInterval);
 
     return () => {
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     };
-  }, [title, content, category, format, isFavorite, persist]);
+  }, [title, content, category, format, isFavorite, persist, autosaveInterval]);
 
   // Extract hashtags from full content
   useEffect(() => {
@@ -136,6 +147,34 @@ export function PromptEditor() {
     }, 300);
     return () => clearTimeout(t);
   }, [content]);
+
+  // Save immediately without leaving the editor
+  const handleSaveNow = async () => {
+    if (!projectId || (!title.trim() && !content.trim())) return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    setSaveState('saving');
+    try {
+      await persist(false);
+      setSaveState('saved');
+      toast({ title: "Saved" });
+    } catch {
+      setSaveState('idle');
+      toast({ title: "Save failed", variant: "destructive" });
+    }
+  };
+
+  // Cmd/Ctrl+S saves immediately
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSaveNow();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, title, content, category, format, tags, isFavorite, promptId]);
 
   const handleSave = async () => {
     if (!projectId || !title.trim() || !content.trim()) {
@@ -235,13 +274,24 @@ export function PromptEditor() {
               </Button>
             )}
             <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSaveNow}
+              disabled={!title.trim() && !content.trim()}
+              className="h-8 px-2"
+              aria-label="Save now"
+              title="Save now (Ctrl/Cmd + S)"
+            >
+              <Save className="h-4 w-4" />
+            </Button>
+            <Button
               onClick={handleSave}
               disabled={isLoading || !canSave}
               size="sm"
               className="h-8 rounded-full px-3 text-xs"
             >
-              <Save className="h-3.5 w-3.5 mr-1" />
-              Save
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Done
             </Button>
           </div>
         </div>
@@ -295,17 +345,23 @@ export function PromptEditor() {
           )}
         </div>
 
+        {format === 'markdown' && !isPreview && (
+          <MarkdownToolbar
+            textareaRef={contentRef}
+            value={content}
+            onChange={(next) => { markDirty(); setContent(next); }}
+            className="mb-4"
+          />
+        )}
+
         <div className="h-px bg-border mb-5" />
 
         {/* Content / Preview */}
         {isPreview && format === 'markdown' ? (
-          <article className="prose-pvault min-h-[60vh] text-base leading-relaxed">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {content || "_Nothing to preview yet._"}
-            </ReactMarkdown>
-          </article>
+          <MarkdownPreview content={content} className="min-h-[60vh]" />
         ) : (
           <textarea
+            ref={contentRef}
             value={content}
             onChange={(e) => { markDirty(); setContent(e.target.value); }}
             placeholder={

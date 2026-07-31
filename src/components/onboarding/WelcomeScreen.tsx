@@ -15,7 +15,7 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
       {/* top bar */}
       <div className="relative px-6 pt-6 flex items-center justify-between">
         <Logo withWordmark />
-        <span className="text-xs text-muted-foreground">v2.0</span>
+        <span className="text-xs text-muted-foreground">v1.0</span>
       </div>
 
       {/* main */}

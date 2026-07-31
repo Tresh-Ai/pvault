@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
 
-interface FloatingActionButtonProps {
+interface FloatingActionButtonProps extends Omit<React.ComponentProps<typeof Button>, "children"> {
   onClick: () => void;
   icon?: React.ReactNode;
   className?: string;
@@ -12,11 +12,13 @@ export function FloatingActionButton({
   onClick,
   icon = <Plus className="h-6 w-6" strokeWidth={2.5} />,
   className,
+  ...props
 }: FloatingActionButtonProps) {
   return (
     <Button
       onClick={onClick}
       aria-label="Create"
+      {...props}
       className={cn(
         "fixed bottom-6 right-6 h-14 w-14 rounded-full p-0",
         "bg-foreground text-background hover:bg-foreground/90",
