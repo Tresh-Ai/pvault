@@ -62,6 +62,8 @@ export interface Settings {
   sortPreference: 'mostRecent' | 'mostUsed' | 'alpha';
   protectWithPIN: boolean;
   pinHash?: string;
+  /** Autosave debounce in ms. 0 disables autosave. */
+  autosaveInterval?: number;
 }
 
 // LocalStorage keys
@@ -400,6 +402,7 @@ export const dbHelpers = {
       theme: 'light',
       sortPreference: 'mostRecent',
       protectWithPIN: false,
+      autosaveInterval: 1200,
     };
   },
 
@@ -408,6 +411,7 @@ export const dbHelpers = {
       theme: 'light',
       sortPreference: 'mostRecent',
       protectWithPIN: false,
+      autosaveInterval: 1200,
     };
     const settings = [{ ...defaultSettings, ...newSettings }];
     storage.set(STORAGE_KEYS.SETTINGS, settings);

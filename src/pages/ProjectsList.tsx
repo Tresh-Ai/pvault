@@ -168,11 +168,12 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
           <div className="h-12 flex items-center justify-between">
             <Logo withWordmark />
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-medium tracking-widest uppercase text-muted-foreground">v2.0</span>
+              <span className="text-[10px] font-medium tracking-widest uppercase text-muted-foreground">v1.0</span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onSettingsClick}
+                data-tour="settings"
                 className="h-8 w-8 p-0 rounded-full"
                 aria-label="Settings"
               >
@@ -187,6 +188,7 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
               onChange={setSearchQuery}
               placeholder="Search projects..."
               className="flex-1 min-w-0"
+              data-tour="search"
             />
             <FilterDropdown
               title="Filter projects"
@@ -204,7 +206,7 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-5 pb-28">
         <div className="flex items-baseline justify-between mb-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
+          <h1 data-tour="projects-heading" className="text-2xl font-semibold tracking-tight">Projects</h1>
           <span className="text-xs text-muted-foreground">
             {projects.length} {projects.length === 1 ? 'vault' : 'vaults'}
           </span>
@@ -254,7 +256,7 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
         }}
       >
         <DialogTrigger asChild>
-          <FloatingActionButton onClick={() => setIsCreateDialogOpen(true)} />
+          <FloatingActionButton onClick={() => setIsCreateDialogOpen(true)} data-tour="fab" />
         </DialogTrigger>
         <DialogContent className="w-[90vw] max-w-lg rounded-lg">
           <DialogHeader>
