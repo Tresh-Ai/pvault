@@ -30,7 +30,14 @@ export function Settings({ onBack }: SettingsProps) {
   const loadSettings = async () => {
     try {
       const currentSettings = await dbHelpers.getSettings();
-      setSettings(currentSettings);
+      if (currentSettings) {
+        setSettings({
+          theme: currentSettings.theme ?? 'light',
+          sortPreference: currentSettings.sortPreference ?? 'mostRecent',
+          protectWithPIN: currentSettings.protectWithPIN ?? false,
+          autosaveInterval: currentSettings.autosaveInterval ?? 1200,
+        });
+      }
     } catch (error) {
       console.error('Failed to load settings:', error);
     }
