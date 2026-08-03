@@ -26,7 +26,10 @@ const App = () => (
           <Route path="/project/:projectId" element={<ProjectView />} />
           <Route path="/project/:projectId/prompt/new" element={<PromptEditor />} />
           <Route path="/project/:projectId/prompt/edit" element={<PromptEditor />} />
-          <Route path="/project/:projectId/workflow/:workflowId" element={<WorkflowView />} />
+          <Route path="/ai" element={<AISettings />} />
+          <Route path="/project/:projectId/chat/:chatId" element={<ChatView />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
