@@ -45,6 +45,17 @@ export function PromptEditor() {
   const isDirty = useRef(false);
   const { toast } = useToast();
 
+  // Undo / redo over title + content
+  const applySnapshot = useCallback((s: { title: string; content: string }) => {
+    isDirty.current = true;
+    setTitle(s.title);
+    setContent(s.content);
+  }, []);
+  const { undo, redo, reset: resetHistory, canUndo, canRedo } = useEditorHistory(
+    { title, content },
+    applySnapshot
+  );
+
   // Autosave frequency from settings
   useEffect(() => {
     dbHelpers.getSettings().then(s => {
