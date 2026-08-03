@@ -176,18 +176,27 @@ export function PromptEditor() {
     }
   };
 
-  // Cmd/Ctrl+S saves immediately
+  // Cmd/Ctrl+S saves immediately, Cmd/Ctrl+Z undo, +Shift redo
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const key = e.key.toLowerCase();
+      if (key === 's') {
         e.preventDefault();
         handleSaveNow();
+      } else if (key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+      } else if (key === 'y') {
+        e.preventDefault();
+        redo();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, title, content, category, format, tags, isFavorite, promptId]);
+  }, [projectId, title, content, category, format, tags, isFavorite, promptId, undo, redo]);
 
   const handleSave = async () => {
     if (!projectId || !title.trim() || !content.trim()) {
