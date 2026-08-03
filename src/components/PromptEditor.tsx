@@ -260,6 +260,32 @@ export function PromptEditor() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
 
+          <div className="flex items-center gap-0.5 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={undo}
+              disabled={!canUndo}
+              className="h-8 px-2"
+              aria-label="Undo"
+              title="Undo (Ctrl/Cmd + Z)"
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={redo}
+              disabled={!canRedo}
+              className="h-8 px-2"
+              aria-label="Redo"
+              title="Redo (Ctrl/Cmd + Shift + Z)"
+            >
+              <Redo2 className="h-4 w-4" />
+            </Button>
+          </div>
+
+
           <div className="flex-1 flex justify-center text-xs text-muted-foreground">
             {saveState === 'saving' && (
               <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Saving</span>
