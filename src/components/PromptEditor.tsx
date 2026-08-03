@@ -93,6 +93,7 @@ export function PromptEditor() {
         setTags(prompt.tags);
         setIsFavorite(prompt.isFavorite);
         setVersions(prompt.versions || []);
+        resetHistory({ title: prompt.title, content: prompt.content });
       }
     } catch {
       toast({ title: "Error loading prompt", description: "Unable to load prompt data.", variant: "destructive" });
