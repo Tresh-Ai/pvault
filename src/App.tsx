@@ -9,6 +9,8 @@ import { PromptEditor } from "./components/PromptEditor";
 import ProjectView from "./pages/ProjectView";
 import WorkflowView from "./pages/WorkflowView";
 import Changelog from "./pages/Changelog";
+import ChatView from "./pages/ChatView";
+import AISettings from "./pages/AISettings";
 
 const queryClient = new QueryClient();
 
