@@ -9,6 +9,8 @@ import { PromptEditor } from "./components/PromptEditor";
 import ProjectView from "./pages/ProjectView";
 import WorkflowView from "./pages/WorkflowView";
 import Changelog from "./pages/Changelog";
+import ChatView from "./pages/ChatView";
+import AISettings from "./pages/AISettings";
 
 const queryClient = new QueryClient();
 
@@ -25,7 +27,10 @@ const App = () => (
           <Route path="/project/:projectId/prompt/new" element={<PromptEditor />} />
           <Route path="/project/:projectId/prompt/edit" element={<PromptEditor />} />
           <Route path="/project/:projectId/workflow/:workflowId" element={<WorkflowView />} />
+          <Route path="/ai" element={<AISettings />} />
+          <Route path="/project/:projectId/chat/:chatId" element={<ChatView />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

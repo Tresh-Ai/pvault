@@ -1,5 +1,5 @@
 import { RefObject } from "react";
-import { Bold, Italic, Link2, Code, ListChecks, List, Heading2, Quote } from "lucide-react";
+import { Bold, Italic, Link2, Code, ListChecks, List, Heading2, Quote, Undo2, Redo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MarkdownToolbarProps {
@@ -7,6 +7,14 @@ interface MarkdownToolbarProps {
   value: string;
   onChange: (next: string) => void;
   className?: string;
+  /** Show markdown insert buttons. Off for plain text / JSON prompts. */
+  showFormatting?: boolean;
+  history?: {
+    undo: () => void;
+    redo: () => void;
+    canUndo: boolean;
+    canRedo: boolean;
+  };
 }
 
 type Action =
@@ -24,7 +32,17 @@ const actions: { icon: typeof Bold; label: string; action: Action }[] = [
   { icon: Quote, label: "Quote", action: { kind: "line", prefix: "> ", placeholder: "Quote" } },
 ];
 
-export function MarkdownToolbar({ textareaRef, value, onChange, className }: MarkdownToolbarProps) {
+const btn =
+  "shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition-colors disabled:opacity-30 disabled:hover:bg-transparent";
+
+export function MarkdownToolbar({
+  textareaRef,
+  value,
+  onChange,
+  className,
+  showFormatting = true,
+  history,
+}: MarkdownToolbarProps) {
   const apply = (action: Action) => {
     const el = textareaRef.current;
     const start = el ? el.selectionStart : value.length;
@@ -67,25 +85,54 @@ export function MarkdownToolbar({ textareaRef, value, onChange, className }: Mar
   return (
     <div
       className={cn(
-        "flex items-center gap-0.5 overflow-x-auto no-scrollbar rounded-full bg-secondary/60 p-1",
+        "flex items-center gap-0.5 overflow-x-auto overscroll-x-contain no-scrollbar rounded-full bg-secondary/60 p-1",
         className
       )}
       role="toolbar"
-      aria-label="Markdown formatting"
+      aria-label="Editor tools"
     >
-      {actions.map(({ icon: Icon, label, action }) => (
-        <button
-          key={label}
-          type="button"
-          title={label}
-          aria-label={label}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => apply(action)}
-          className="shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
-        >
-          <Icon className="h-4 w-4" />
-        </button>
-      ))}
+      {history && (
+        <>
+          <button
+            type="button"
+            title="Undo (Ctrl/Cmd + Z)"
+            aria-label="Undo"
+            disabled={!history.canUndo}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={history.undo}
+            className={btn}
+          >
+            <Undo2 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            title="Redo (Ctrl/Cmd + Shift + Z)"
+            aria-label="Redo"
+            disabled={!history.canRedo}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={history.redo}
+            className={btn}
+          >
+            <Redo2 className="h-4 w-4" />
+          </button>
+          {showFormatting && <div className="shrink-0 w-px h-5 bg-border mx-1" />}
+        </>
+      )}
+
+      {showFormatting &&
+        actions.map(({ icon: Icon, label, action }) => (
+          <button
+            key={label}
+            type="button"
+            title={label}
+            aria-label={label}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => apply(action)}
+            className={btn}
+          >
+            <Icon className="h-4 w-4" />
+          </button>
+        ))}
     </div>
   );
 }
