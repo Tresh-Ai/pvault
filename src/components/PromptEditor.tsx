@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
-import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2, Undo2, Redo2 } from "lucide-react";
 import { MarkdownToolbar } from "@/components/markdown-toolbar";
 import { MarkdownPreview } from "@/components/markdown-preview";
+import { useEditorHistory } from "@/hooks/use-editor-history";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +44,17 @@ export function PromptEditor() {
   const autosaveTimer = useRef<ReturnType<typeof setTimeout>>();
   const isDirty = useRef(false);
   const { toast } = useToast();
+
+  // Undo / redo over title + content
+  const applySnapshot = useCallback((s: { title: string; content: string }) => {
+    isDirty.current = true;
+    setTitle(s.title);
+    setContent(s.content);
+  }, []);
+  const { undo, redo, reset: resetHistory, canUndo, canRedo } = useEditorHistory(
+    { title, content },
+    applySnapshot
+  );
 
   // Autosave frequency from settings
   useEffect(() => {
@@ -81,6 +93,7 @@ export function PromptEditor() {
         setTags(prompt.tags);
         setIsFavorite(prompt.isFavorite);
         setVersions(prompt.versions || []);
+        resetHistory({ title: prompt.title, content: prompt.content });
       }
     } catch {
       toast({ title: "Error loading prompt", description: "Unable to load prompt data.", variant: "destructive" });
@@ -163,18 +176,27 @@ export function PromptEditor() {
     }
   };
 
-  // Cmd/Ctrl+S saves immediately
+  // Cmd/Ctrl+S saves immediately, Cmd/Ctrl+Z undo, +Shift redo
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const key = e.key.toLowerCase();
+      if (key === 's') {
         e.preventDefault();
         handleSaveNow();
+      } else if (key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+      } else if (key === 'y') {
+        e.preventDefault();
+        redo();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, title, content, category, format, tags, isFavorite, promptId]);
+  }, [projectId, title, content, category, format, tags, isFavorite, promptId, undo, redo]);
 
   const handleSave = async () => {
     if (!projectId || !title.trim() || !content.trim()) {
@@ -237,6 +259,32 @@ export function PromptEditor() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
+
+          <div className="flex items-center gap-0.5 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={undo}
+              disabled={!canUndo}
+              className="h-8 px-2"
+              aria-label="Undo"
+              title="Undo (Ctrl/Cmd + Z)"
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={redo}
+              disabled={!canRedo}
+              className="h-8 px-2"
+              aria-label="Redo"
+              title="Redo (Ctrl/Cmd + Shift + Z)"
+            >
+              <Redo2 className="h-4 w-4" />
+            </Button>
+          </div>
+
 
           <div className="flex-1 flex justify-center text-xs text-muted-foreground">
             {saveState === 'saving' && (
