@@ -159,21 +159,22 @@ export function Settings({ onBack }: SettingsProps) {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-semibold">Settings</h1>
-              <p className="text-sm text-muted-foreground">Manage your preferences</p>
-            </div>
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="h-12 flex items-center gap-2">
+            <button
+              onClick={onBack}
+              aria-label="Back"
+              className="shrink-0 h-8 w-8 -ml-1 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <h1 className="text-base font-semibold tracking-tight">Settings</h1>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="px-4 py-6 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 py-6 pb-24 space-y-6">
         {/* Appearance */}
         <Card>
           <CardHeader>
