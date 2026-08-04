@@ -297,6 +297,17 @@ export function Settings({ onBack }: SettingsProps) {
             <Separator className="my-4" />
             <Button
               variant="outline"
+              className="w-full justify-between mb-2"
+              onClick={() => navigate('/ai')}
+            >
+              <span className="flex items-center">
+                <Sparkle className="h-4 w-4 mr-2" />
+                PVault AI
+              </span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
               className="w-full justify-between"
               onClick={() => navigate('/changelog')}
             >
@@ -306,6 +317,7 @@ export function Settings({ onBack }: SettingsProps) {
               </span>
               <ChevronRight className="h-4 w-4" />
             </Button>
+
           </CardContent>
         </Card>
       </div>
