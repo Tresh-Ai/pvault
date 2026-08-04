@@ -226,6 +226,34 @@ export function PromptEditor() {
     }
   };
 
+  /** Save, then hand the prompt to the built-in AI chat. */
+  const runInPVaultAI = async () => {
+    if (!projectId || !content.trim()) return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    try {
+      const id = await persist(false);
+      if (id) await dbHelpers.incrementPromptUsage(id);
+      navigate(`/project/${projectId}/chat/new${id ? `?prompt=${id}` : ""}`);
+    } catch {
+      toast({ title: "Could not open the AI chat", variant: "destructive" });
+    }
+  };
+
+  /** Hand the prompt to an external AI tool in a new tab. */
+  const openExternal = async (target: typeof EXTERNAL_AI[number]) => {
+    const text = content.trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      /* clipboard may be blocked - the URL still carries the prompt */
+    }
+    if (promptId) dbHelpers.incrementPromptUsage(promptId).catch(() => {});
+    window.open(target.url(text), "_blank", "noopener,noreferrer");
+    if (target.copy) toast({ title: `Copied - paste it into ${target.name}` });
+  };
+
+
   const handleViewVersions = async () => {
     if (!promptId) return;
     try {
