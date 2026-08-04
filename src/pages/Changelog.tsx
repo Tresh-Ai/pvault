@@ -29,7 +29,7 @@ const RELEASES: Release[] = [
       {
         title: "Editor",
         items: [
-          "Rebuilt prompt editor with separate title and content fields — no more merged, glitchy title.",
+          "Rebuilt prompt editor with separate title and content fields - no more merged, glitchy title.",
           "Markdown format with live preview that matches exported output.",
           "Markdown formatting toolbar: bold, italic, links, code, headings, lists, checklists and quotes.",
           "Autosave with a configurable frequency, plus manual save-now from the editor.",
@@ -50,7 +50,7 @@ const RELEASES: Release[] = [
         items: [
           "Proper service worker with precaching for genuine offline use.",
           "Install-as-app prompt with platform-specific instructions, including iOS.",
-          "localStorage-only persistence for stability — no database to break offline.",
+          "localStorage-only persistence for stability - no database to break offline.",
         ],
       },
       {

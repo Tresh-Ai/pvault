@@ -4,7 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Moon, Sun, Monitor, Trash2, Download, ScrollText, ChevronRight } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Monitor, Trash2, Download, ScrollText, ChevronRight, Sparkle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { dbHelpers } from "@/lib/database";
@@ -159,21 +159,22 @@ export function Settings({ onBack }: SettingsProps) {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-semibold">Settings</h1>
-              <p className="text-sm text-muted-foreground">Manage your preferences</p>
-            </div>
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="h-12 flex items-center gap-2">
+            <button
+              onClick={onBack}
+              aria-label="Back"
+              className="shrink-0 h-8 w-8 -ml-1 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <h1 className="text-base font-semibold tracking-tight">Settings</h1>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="px-4 py-6 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 py-6 pb-24 space-y-6">
         {/* Appearance */}
         <Card>
           <CardHeader>
@@ -296,6 +297,17 @@ export function Settings({ onBack }: SettingsProps) {
             <Separator className="my-4" />
             <Button
               variant="outline"
+              className="w-full justify-between mb-2"
+              onClick={() => navigate('/ai')}
+            >
+              <span className="flex items-center">
+                <Sparkle className="h-4 w-4 mr-2" />
+                PVault AI
+              </span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
               className="w-full justify-between"
               onClick={() => navigate('/changelog')}
             >
@@ -305,6 +317,7 @@ export function Settings({ onBack }: SettingsProps) {
               </span>
               <ChevronRight className="h-4 w-4" />
             </Button>
+
           </CardContent>
         </Card>
       </div>

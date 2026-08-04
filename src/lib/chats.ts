@@ -22,7 +22,7 @@ export interface Chat {
   title: string;
   model?: string;
   messages: ChatMessage[];
-  /** Flat index of every prompt/flow/tool ever used in this chat — powers "where did I use this?" */
+  /** Flat index of every prompt/flow/tool ever used in this chat - powers "where did I use this?" */
   usedPromptIds: string[];
   usedWorkflowIds: string[];
   usedToolIds: string[];

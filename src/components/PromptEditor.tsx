@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
-import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2, Undo2, Redo2 } from "lucide-react";
+import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink } from "lucide-react";
 import { MarkdownToolbar } from "@/components/markdown-toolbar";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { useEditorHistory } from "@/hooks/use-editor-history";
@@ -13,6 +13,14 @@ import { cn } from "@/lib/utils";
 
 const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
 type Format = 'text' | 'json' | 'markdown';
+
+/** External AI tools we can hand a prompt to. `q` targets accept the text in the URL. */
+const EXTERNAL_AI: { name: string; url: (text: string) => string; copy?: boolean }[] = [
+  { name: "ChatGPT", url: (t) => `https://chatgpt.com/?q=${encodeURIComponent(t)}` },
+  { name: "Claude", url: (t) => `https://claude.ai/new?q=${encodeURIComponent(t)}` },
+  { name: "Gemini", url: () => "https://gemini.google.com/app", copy: true },
+];
+
 
 export function PromptEditor() {
   const navigate = useNavigate();
@@ -128,7 +136,7 @@ export function PromptEditor() {
     return created.id;
   }, [projectId, promptId, title, content, category, format, tags, isFavorite]);
 
-  // Debounced autosave — works for brand new prompts too
+  // Debounced autosave - works for brand new prompts too
   useEffect(() => {
     if (!isDirty.current) return;
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
@@ -218,6 +226,34 @@ export function PromptEditor() {
     }
   };
 
+  /** Save, then hand the prompt to the built-in AI chat. */
+  const runInPVaultAI = async () => {
+    if (!projectId || !content.trim()) return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    try {
+      const id = await persist(false);
+      if (id) await dbHelpers.incrementPromptUsage(id);
+      navigate(`/project/${projectId}/chat/new${id ? `?prompt=${id}` : ""}`);
+    } catch {
+      toast({ title: "Could not open the AI chat", variant: "destructive" });
+    }
+  };
+
+  /** Hand the prompt to an external AI tool in a new tab. */
+  const openExternal = async (target: typeof EXTERNAL_AI[number]) => {
+    const text = content.trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      /* clipboard may be blocked - the URL still carries the prompt */
+    }
+    if (promptId) dbHelpers.incrementPromptUsage(promptId).catch(() => {});
+    window.open(target.url(text), "_blank", "noopener,noreferrer");
+    if (target.copy) toast({ title: `Copied - paste it into ${target.name}` });
+  };
+
+
   const handleViewVersions = async () => {
     if (!promptId) return;
     try {
@@ -260,30 +296,8 @@ export function PromptEditor() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
 
-          <div className="flex items-center gap-0.5 shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={undo}
-              disabled={!canUndo}
-              className="h-8 px-2"
-              aria-label="Undo"
-              title="Undo (Ctrl/Cmd + Z)"
-            >
-              <Undo2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={redo}
-              disabled={!canRedo}
-              className="h-8 px-2"
-              aria-label="Redo"
-              title="Redo (Ctrl/Cmd + Shift + Z)"
-            >
-              <Redo2 className="h-4 w-4" />
-            </Button>
-          </div>
+
+
 
 
           <div className="flex-1 flex justify-center text-xs text-muted-foreground">
@@ -393,14 +407,40 @@ export function PromptEditor() {
           )}
         </div>
 
-        {format === 'markdown' && !isPreview && (
+        {/* Run this prompt */}
+        <div className="mb-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={runInPVaultAI}
+            disabled={!content.trim()}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium disabled:opacity-40"
+          >
+            <Sparkle className="h-3.5 w-3.5" /> Run in PVault AI
+          </button>
+          {EXTERNAL_AI.map((target) => (
+            <button
+              key={target.name}
+              type="button"
+              onClick={() => openExternal(target)}
+              disabled={!content.trim()}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-40"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> {target.name}
+            </button>
+          ))}
+        </div>
+
+        {!isPreview && (
           <MarkdownToolbar
             textareaRef={contentRef}
             value={content}
             onChange={(next) => { markDirty(); setContent(next); }}
+            showFormatting={format === 'markdown'}
+            history={{ undo, redo, canUndo, canRedo }}
             className="mb-4"
           />
         )}
+
 
         <div className="h-px bg-border mb-5" />
 
