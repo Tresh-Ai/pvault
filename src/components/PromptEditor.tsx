@@ -371,14 +371,40 @@ export function PromptEditor() {
           )}
         </div>
 
-        {format === 'markdown' && !isPreview && (
+        {/* Run this prompt */}
+        <div className="mb-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={runInPVaultAI}
+            disabled={!content.trim()}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium disabled:opacity-40"
+          >
+            <Sparkle className="h-3.5 w-3.5" /> Run in PVault AI
+          </button>
+          {EXTERNAL_AI.map((target) => (
+            <button
+              key={target.name}
+              type="button"
+              onClick={() => openExternal(target)}
+              disabled={!content.trim()}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-40"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> {target.name}
+            </button>
+          ))}
+        </div>
+
+        {!isPreview && (
           <MarkdownToolbar
             textareaRef={contentRef}
             value={content}
             onChange={(next) => { markDirty(); setContent(next); }}
+            showFormatting={format === 'markdown'}
+            history={{ undo, redo, canUndo, canRedo }}
             className="mb-4"
           />
         )}
+
 
         <div className="h-px bg-border mb-5" />
 
