@@ -14,6 +14,14 @@ import { cn } from "@/lib/utils";
 const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
 type Format = 'text' | 'json' | 'markdown';
 
+/** External AI tools we can hand a prompt to. `q` targets accept the text in the URL. */
+const EXTERNAL_AI: { name: string; url: (text: string) => string; copy?: boolean }[] = [
+  { name: "ChatGPT", url: (t) => `https://chatgpt.com/?q=${encodeURIComponent(t)}` },
+  { name: "Claude", url: (t) => `https://claude.ai/new?q=${encodeURIComponent(t)}` },
+  { name: "Gemini", url: () => "https://gemini.google.com/app", copy: true },
+];
+
+
 export function PromptEditor() {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
