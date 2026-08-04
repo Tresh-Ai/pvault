@@ -128,7 +128,7 @@ export function PromptEditor() {
     return created.id;
   }, [projectId, promptId, title, content, category, format, tags, isFavorite]);
 
-  // Debounced autosave — works for brand new prompts too
+  // Debounced autosave - works for brand new prompts too
   useEffect(() => {
     if (!isDirty.current) return;
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);

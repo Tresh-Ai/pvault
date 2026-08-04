@@ -1,5 +1,5 @@
 /**
- * OpenRouter integration — local only.
+ * OpenRouter integration - local only.
  * The user's API key never leaves the device except to call OpenRouter directly.
  */
 

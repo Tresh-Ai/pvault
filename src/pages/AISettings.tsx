@@ -132,7 +132,7 @@ export default function AISettings() {
               </p>
             </div>
 
-            {/* How & why — collapsed by default so nothing feels jumbled */}
+            {/* How & why - collapsed by default so nothing feels jumbled */}
             <div className="rounded-2xl border border-border bg-card overflow-hidden">
               <button
                 onClick={() => setHowOpen((v) => !v)}
@@ -144,7 +144,7 @@ export default function AISettings() {
               {howOpen && (
                 <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
                   <p className="text-sm text-muted-foreground">
-                    OpenRouter is a single door to hundreds of AI models — including free ones. One key, no separate
+                    OpenRouter is a single door to hundreds of AI models - including free ones. One key, no separate
                     accounts, and you only ever pay for what you use.
                   </p>
                   <ol className="space-y-3">
@@ -168,7 +168,7 @@ export default function AISettings() {
                     </a>
                   </Button>
                   <p className="text-xs text-muted-foreground">
-                    Opens in a new tab — nothing you've written here is lost.
+                    Opens in a new tab - nothing you've written here is lost.
                   </p>
                 </div>
               )}
@@ -202,7 +202,7 @@ export default function AISettings() {
                 Continue <ArrowRight className="h-4 w-4 ml-1.5" />
               </Button>
               <p className="text-xs text-muted-foreground">
-                Stored only in this browser. PVault has no server — nothing is uploaded.
+                Stored only in this browser. PVault has no server - nothing is uploaded.
               </p>
             </div>
           </>
@@ -226,7 +226,7 @@ export default function AISettings() {
             <div>
               <h2 className="text-lg font-semibold tracking-tight">Pick a model</h2>
               <p className="text-sm text-muted-foreground">
-                Best picks first. Free models cost nothing to run — start there.
+                Best picks first. Free models cost nothing to run - start there.
               </p>
             </div>
 

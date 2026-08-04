@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PVault Design System — Minimalist B&W with a green pulse */
+/* PVault Design System - Minimalist B&W with a green pulse */
 
 @layer base {
   :root {
@@ -124,7 +124,7 @@
 }
 
 @layer base {
-  /* No focus rings/outlines on text entry surfaces — keep a subtle bg shift instead */
+  /* No focus rings/outlines on text entry surfaces - keep a subtle bg shift instead */
   input:focus,
   input:focus-visible,
   textarea:focus,

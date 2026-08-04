@@ -20,7 +20,7 @@ const STEPS: Step[] = [
   {
     selector: '[data-tour="search"]',
     title: "Find anything fast",
-    body: "Search by name, description or tag — instantly, fully offline.",
+    body: "Search by name, description or tag - instantly, fully offline.",
   },
   {
     selector: '[data-tour="fab"]',

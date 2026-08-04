@@ -55,7 +55,7 @@ export function Newsletter({ variant = "card", dismissible = true }: NewsletterP
       </h2>
       <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-sm">
         Join the newsletter for the top AI products, prompt drops and new tools
-        from the founder — straight to your inbox.
+        from the founder - straight to your inbox.
       </p>
 
       <div className="overflow-hidden rounded-xl border border-border bg-background">
