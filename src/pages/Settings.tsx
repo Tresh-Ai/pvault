@@ -68,16 +68,9 @@ export function Settings({ onBack }: SettingsProps) {
   };
 
   const applyTheme = (theme: string) => {
-    const root = document.documentElement;
-    root.classList.remove('dark');
-    
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else if (theme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) root.classList.add('dark');
-    }
+    applyStoredTheme(theme as ThemeChoice);
   };
+
 
   const exportData = async () => {
     try {
