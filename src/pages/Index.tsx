@@ -12,43 +12,12 @@ const Index = () => {
   const [showTour, setShowTour] = useState(false);
   const { state: onboardingState, completeOnboarding } = useOnboarding();
 
-  // Apply theme to document
-  useEffect(() => {
-    const root = document.documentElement;
-    const savedTheme = localStorage.getItem('pvault_settings');
-    
-    if (savedTheme) {
-      try {
-        const settings = JSON.parse(savedTheme);
-        const theme = settings[0]?.theme || 'light';
-        
-        if (theme === 'dark') {
-          root.classList.add('dark');
-        } else if (theme === 'system') {
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (prefersDark) root.classList.add('dark');
-        }
-      } catch (error) {
-        console.error('Failed to load theme:', error);
-      }
-    }
-  }, []);
-
   const handleOnboardingComplete = (theme: 'light' | 'dark' | 'system') => {
-    // Apply theme immediately
-    const root = document.documentElement;
-    root.classList.remove('dark');
-    
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else if (theme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) root.classList.add('dark');
-    }
-    
     completeOnboarding(theme);
+    applyTheme(theme);
     setShowTour(true);
   };
+
 
   // Existing users who completed onboarding earlier still get the tour once
   useEffect(() => {
