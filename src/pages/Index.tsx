@@ -43,6 +43,8 @@ const Index = () => {
         />
       )}
       {showTour && !showSettings && <ProductTour onFinish={() => setShowTour(false)} />}
+      {!showTour && !showSettings && <UpdateDialog />}
+
     </div>
   );
 };
