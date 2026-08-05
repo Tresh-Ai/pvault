@@ -8,6 +8,8 @@ import { ArrowLeft, Moon, Sun, Monitor, Trash2, Download, ScrollText, ChevronRig
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { dbHelpers } from "@/lib/database";
+import { applyTheme as applyStoredTheme, type ThemeChoice } from "@/lib/theme";
+
 
 interface SettingsProps {
   onBack: () => void;
