@@ -5,6 +5,9 @@ import { Settings } from "./Settings";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { ProductTour, hasSeenTour } from "@/components/product-tour";
+import { applyTheme } from "@/lib/theme";
+import { UpdateDialog } from "@/components/update-dialog";
+
 
 const Index = () => {
   const navigate = useNavigate();
