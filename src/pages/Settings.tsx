@@ -88,7 +88,7 @@ export function Settings({ onBack }: SettingsProps) {
       }
 
       const exportData = {
-        version: '1.0',
+        version: '1.1',
         exportDate: new Date().toISOString(),
         projects,
         prompts: allPrompts,
@@ -285,7 +285,7 @@ export function Settings({ onBack }: SettingsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>Version 1.0</p>
+              <p>Version 1.1</p>
               <p>Your offline AI prompt vault</p>
               <p>All data is stored locally on your device</p>
             </div>
