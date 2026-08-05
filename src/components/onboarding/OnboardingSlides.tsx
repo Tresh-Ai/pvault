@@ -6,11 +6,14 @@ import {
   FileText,
   Wrench,
   Download,
-  Sparkles,
+  Sparkle,
+  MessageSquare,
+  Lock,
   Eye,
   GitBranch,
   Smartphone,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 interface OnboardingSlidesProps {
