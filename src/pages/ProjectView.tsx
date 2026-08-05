@@ -375,56 +375,29 @@ export default function ProjectView() {
             </div>
 
             {/* Segmented tabs */}
-            <div className="flex bg-secondary rounded-full p-1 w-full">
-              <button
-                onClick={() => { setActiveTab("prompts"); setSelectedFilters([]); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  activeTab === "prompts"
-                    ? "bg-background text-foreground shadow-card"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <FileText className="h-3.5 w-3.5" />
-                Prompts
-                <span className="text-xs opacity-60">{prompts.length}</span>
-              </button>
-              <button
-                onClick={() => { setActiveTab("tools"); setSelectedFilters([]); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  activeTab === "tools"
-                    ? "bg-background text-foreground shadow-card"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <Wrench className="h-3.5 w-3.5" />
-                Tools
-                <span className="text-xs opacity-60">{tools.length}</span>
-              </button>
-              <button
-                onClick={() => { setActiveTab("workflows"); setSelectedFilters([]); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  activeTab === "workflows"
-                    ? "bg-background text-foreground shadow-card"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <GitBranch className="h-3.5 w-3.5" />
-                Flows
-                <span className="text-xs opacity-60">{workflows.length}</span>
-              </button>
-              <button
-                onClick={() => { setActiveTab("chats"); setSelectedFilters([]); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  activeTab === "chats"
-                    ? "bg-background text-foreground shadow-card"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                Chats
-                <span className="text-xs opacity-60">{chats.length}</span>
-              </button>
+            <div className="flex bg-secondary rounded-full p-1 w-full gap-0.5">
+              {([
+                { key: "prompts", label: "Prompts", icon: FileText, count: prompts.length },
+                { key: "tools", label: "Tools", icon: Wrench, count: tools.length },
+                { key: "workflows", label: "Flows", icon: GitBranch, count: workflows.length },
+                { key: "chats", label: "Chats", icon: MessageSquare, count: chats.length },
+              ] as const).map(({ key, label, icon: Icon, count }) => (
+                <button
+                  key={key}
+                  onClick={() => { setActiveTab(key); setSelectedFilters([]); }}
+                  className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 sm:px-3 py-1.5 rounded-full text-[13px] sm:text-sm font-medium transition-all ${
+                    activeTab === key
+                      ? "bg-background text-foreground shadow-card"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{label}</span>
+                  <span className="text-[11px] opacity-60 shrink-0 hidden xs:inline sm:inline">{count}</span>
+                </button>
+              ))}
             </div>
+
           </div>
         </div>
       </div>
