@@ -75,4 +75,6 @@ Maintainers: see [MAINTAINING.md](MAINTAINING.md) for the release and triage pro
 
 ## License
 
-Licensed under the Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Licensed under the **GNU AGPL v3.0 or later**. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+In short: you may use, study, modify and redistribute PVault, including commercially. If you distribute it, or run a modified version as a network service, you must release your changes under the same license and keep the copyright and license notices intact. See [LICENSE_CHOICE.md](LICENSE_CHOICE.md) for why this license was picked and what the alternatives mean.
