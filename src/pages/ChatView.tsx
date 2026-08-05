@@ -27,6 +27,47 @@ import { cn } from "@/lib/utils";
 const SYSTEM_PROMPT =
   "You are PVault AI, a focused assistant that helps people run and refine their saved prompts. Be direct and useful. Use markdown when it helps readability.";
 
+interface Draft {
+  input: string;
+  pending: ChatAttachment[];
+  texts: Record<string, string>;
+}
+
+const draftKey = (chatId: string) => `pvault_chat_draft_${chatId}`;
+
+function readDraft(chatId: string): Draft | null {
+  try {
+    const raw = localStorage.getItem(draftKey(chatId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Draft;
+    if (!parsed.input && !parsed.pending?.length) return null;
+    return { input: parsed.input ?? "", pending: parsed.pending ?? [], texts: parsed.texts ?? {} };
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(chatId: string, draft: Draft) {
+  try {
+    if (!draft.input.trim() && !draft.pending.length) {
+      localStorage.removeItem(draftKey(chatId));
+      return;
+    }
+    localStorage.setItem(draftKey(chatId), JSON.stringify(draft));
+  } catch {
+    /* storage full or unavailable */
+  }
+}
+
+function clearDraft(chatId: string) {
+  try {
+    localStorage.removeItem(draftKey(chatId));
+  } catch {
+    /* ignore */
+  }
+}
+
+
 export default function ChatView() {
   const { projectId, chatId } = useParams<{ projectId: string; chatId: string }>();
   const navigate = useNavigate();
