@@ -168,7 +168,7 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
           <div className="h-12 flex items-center justify-between">
             <Logo withWordmark />
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-medium tracking-widest uppercase text-muted-foreground">v1.0</span>
+              <span className="text-[10px] font-medium tracking-widest uppercase text-muted-foreground">v1.1</span>
               <Button
                 variant="ghost"
                 size="sm"

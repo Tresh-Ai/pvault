@@ -6,11 +6,14 @@ import {
   FileText,
   Wrench,
   Download,
-  Sparkles,
+  Sparkle,
+  MessageSquare,
+  Lock,
   Eye,
   GitBranch,
   Smartphone,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 interface OnboardingSlidesProps {
@@ -42,33 +45,48 @@ const slides = [
   },
   {
     icon: GitBranch,
-    tag: "04 · Workflows",
-    title: "Chain prompts into workflows.",
+    tag: "04 · Flows",
+    title: "Chain prompts into a flow.",
     description:
-      "Build repeatable sequences of prompts and tools, then run them step by step with one-tap copy.",
+      "A flow is just an ordered list of steps: a saved prompt, a tool to open, or a note to yourself. Build it once, then play it and work through the steps one tap at a time - or hand the whole flow to the AI and let it run the sequence for you.",
+  },
+  {
+    icon: Sparkle,
+    tag: "05 · PVault AI",
+    title: "Run your prompts right here.",
+    description:
+      "Connect your own OpenRouter key in Settings (free models included) and chat inside PVault. Tap + in the chat to pull in any saved prompt, tool or flow - no copy-pasting between apps.",
+  },
+  {
+    icon: MessageSquare,
+    tag: "06 · Chats",
+    title: "Every run is remembered.",
+    description:
+      "Each project keeps its own Chats tab, so you can look back and see exactly where a prompt or flow was used, and what the AI said.",
   },
   {
     icon: Download,
-    tag: "05 · Reuse",
+    tag: "07 · Reuse",
     title: "Copy, export, ship.",
     description:
-      "One tap to copy. Export any prompt as .txt, .md, or .json. Your data, always portable.",
+      "One tap to copy, or open a prompt straight in ChatGPT, Claude or Gemini. Export as .txt, .md, or .json. Your data, always portable.",
   },
   {
     icon: Smartphone,
-    tag: "06 · Install",
+    tag: "08 · Install",
     title: "Install it as an app.",
     description:
       "Add PVault to your home screen and it runs full-screen and fully offline - no connection needed, ever.",
   },
   {
-    icon: Sparkles,
-    tag: "07 · Private",
+    icon: Lock,
+    tag: "09 · Private",
     title: "Fully offline. Fully yours.",
     description:
-      "Everything lives on your device. No accounts, no tracking, no cloud lock-in.",
+      "Everything lives on your device. No accounts, no tracking, no cloud lock-in. Your AI key stays local too.",
   },
 ];
+
 
 export function OnboardingSlides({ onComplete, onBack }: OnboardingSlidesProps) {
   const [i, setI] = useState(0);

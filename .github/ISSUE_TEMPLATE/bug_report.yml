@@ -1,0 +1,57 @@
+name: Bug report
+description: Something in PVault is broken
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open project X
+        2. Tap ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device, OS and browser
+      placeholder: iPhone 13, iOS 18, Safari
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How were you using PVault?
+      options:
+        - Installed to home screen
+        - Browser tab
+    validations:
+      required: true
+  - type: dropdown
+    id: network
+    attributes:
+      label: Network
+      options:
+        - Online
+        - Offline
+        - Not sure
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors (optional)
+      render: text
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before submitting
+      options:
+        - label: I have removed any private prompt content or API keys from this report
+          required: true

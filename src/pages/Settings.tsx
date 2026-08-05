@@ -8,6 +8,8 @@ import { ArrowLeft, Moon, Sun, Monitor, Trash2, Download, ScrollText, ChevronRig
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { dbHelpers } from "@/lib/database";
+import { applyTheme as applyStoredTheme, type ThemeChoice } from "@/lib/theme";
+
 
 interface SettingsProps {
   onBack: () => void;
@@ -68,16 +70,9 @@ export function Settings({ onBack }: SettingsProps) {
   };
 
   const applyTheme = (theme: string) => {
-    const root = document.documentElement;
-    root.classList.remove('dark');
-    
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else if (theme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) root.classList.add('dark');
-    }
+    applyStoredTheme(theme as ThemeChoice);
   };
+
 
   const exportData = async () => {
     try {
@@ -93,7 +88,7 @@ export function Settings({ onBack }: SettingsProps) {
       }
 
       const exportData = {
-        version: '1.0',
+        version: '1.1',
         exportDate: new Date().toISOString(),
         projects,
         prompts: allPrompts,
@@ -290,7 +285,7 @@ export function Settings({ onBack }: SettingsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>Version 1.0</p>
+              <p>Version 1.1</p>
               <p>Your offline AI prompt vault</p>
               <p>All data is stored locally on your device</p>
             </div>

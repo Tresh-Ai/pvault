@@ -408,7 +408,7 @@ export function PromptEditor() {
         </div>
 
         {/* Run this prompt */}
-        <div className="mb-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <div className="mb-4 -mx-4 px-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={runInPVaultAI}
