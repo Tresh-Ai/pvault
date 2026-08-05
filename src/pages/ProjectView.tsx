@@ -393,7 +393,7 @@ export default function ProjectView() {
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{label}</span>
-                  <span className="text-[11px] opacity-60 shrink-0 hidden xs:inline sm:inline">{count}</span>
+                  <span className="text-[11px] opacity-60 shrink-0 hidden sm:inline">{count}</span>
                 </button>
               ))}
             </div>
