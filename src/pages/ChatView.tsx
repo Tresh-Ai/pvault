@@ -109,6 +109,14 @@ export default function ChatView() {
           setPending([{ kind: "workflow", id: found.id, label: found.name }]);
           pendingText.current[found.id] = text;
         }
+      } else {
+        // Nothing seeded: bring back whatever was being typed before a refresh.
+        const draft = readDraft(current.id);
+        if (draft) {
+          setInput(draft.input);
+          setPending(draft.pending);
+          pendingText.current = { ...pendingText.current, ...draft.texts };
+        }
       }
     })();
     return () => {
@@ -116,6 +124,33 @@ export default function ChatView() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, chatId]);
+
+  // ---- draft persistence: a refresh should never wipe your work ---------
+  useEffect(() => {
+    if (!chat) return;
+    writeDraft(chat.id, { input, pending, texts: pendingText.current });
+  }, [chat?.id, input, pending]);
+
+  // If the tab closes or reloads mid-stream, keep the partial answer.
+  useEffect(() => {
+    const persist = () => {
+      if (!streaming || !chat) return;
+      const partial = streamTextRef.current;
+      if (!partial.trim()) return;
+      void chatHelpers.saveChat({
+        ...chat,
+        messages: [...chat.messages, chatHelpers.newMessage("assistant", partial)],
+      });
+    };
+    window.addEventListener("pagehide", persist);
+    window.addEventListener("beforeunload", persist);
+    return () => {
+      window.removeEventListener("pagehide", persist);
+      window.removeEventListener("beforeunload", persist);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streaming, chat]);
+
 
   // ---- autoscroll ------------------------------------------------------
   const scrollToBottom = useCallback((smooth = true) => {
