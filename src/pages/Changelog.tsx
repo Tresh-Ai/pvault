@@ -13,10 +13,43 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
-    version: "1.0",
-    date: "July 2026",
+    version: "1.1",
+    date: "August 2026",
     current: true,
     sections: [
+      {
+        title: "PVault AI",
+        items: [
+          "Built-in AI chat: bring your own OpenRouter key and run saved prompts without leaving PVault.",
+          "Guided AI setup page explaining why OpenRouter and how to get a key, with a searchable model list that puts free and high-quality models first.",
+          "ChatGPT-style chat: fixed auto-growing composer, expand-to-editor, stop streaming, editable and copyable messages, regenerate, and a subtle jump-to-latest.",
+          "Tap + in the chat to pull in any saved prompt, tool or flow as context.",
+        ],
+      },
+      {
+        title: "Flows & chats",
+        items: [
+          "Run a flow directly in the AI, with every step handed over in order.",
+          "New Chats tab in each project so you can see where a prompt or flow was used.",
+          "Open any prompt straight in ChatGPT, Claude or Gemini from the editor.",
+        ],
+      },
+      {
+        title: "Fixes",
+        items: [
+          "Theme now applies on every page and survives a refresh, including system mode.",
+          "Project tabs no longer overflow their pill on small phones.",
+          "Chat drafts and in-progress answers survive an accidental refresh.",
+          "Undo and redo moved into the scrollable editor toolbar so the top bar stays stable.",
+        ],
+      },
+    ],
+  },
+  {
+    version: "1.0",
+    date: "July 2026",
+    sections: [
+
       {
         title: "Design",
         items: [
