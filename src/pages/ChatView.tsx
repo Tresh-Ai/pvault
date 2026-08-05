@@ -275,6 +275,8 @@ export default function ChatView() {
     setChat(withUser);
     await chatHelpers.saveChat(withUser);
     setInput("");
+    clearDraft(chat.id);
+
     setPending([]);
     setAtBottom(true);
     run(history, withUser);
