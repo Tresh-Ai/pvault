@@ -45,6 +45,7 @@ export function PromptEditor() {
   const [isPreview, setIsPreview] = useState(false);
   const [isVersionsOpen, setIsVersionsOpen] = useState(false);
   const [versions, setVersions] = useState<PromptVersion[]>([]);
+  const [varValues, setVarValues] = useState<Record<string, string>>({});
 
   const [autosaveInterval, setAutosaveInterval] = useState(1200);
 
