@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Moon, Sun, Monitor, Trash2, Download, ScrollText, ChevronRight, Sparkle } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Monitor, Trash2, Download, Upload, ScrollText, ChevronRight, Sparkle, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { dbHelpers } from "@/lib/database";
+import { downloadBackup, importFromFile } from "@/lib/backup";
 import { applyTheme as applyStoredTheme, type ThemeChoice } from "@/lib/theme";
 
 
