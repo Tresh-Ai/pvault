@@ -126,30 +126,44 @@ export default function ChatView() {
       // Seed from a prompt or flow passed through the URL.
       const seedPrompt = params.get("prompt");
       const seedFlow = params.get("flow");
+      // Variable values filled in before the hand-off, e.g. ?vars={"topic":"launch"}
+      let seedVars: Record<string, string> = {};
+      try {
+        const raw = params.get("vars");
+        if (raw) seedVars = JSON.parse(raw) as Record<string, string>;
+      } catch {
+        seedVars = {};
+      }
+      const resolve = (text: string) => fillVariables(text, seedVars);
+
       if (seedPrompt) {
         const found = p.find((x) => x.id === seedPrompt);
         if (found) {
-          setInput(found.content);
+          const text = resolve(found.content);
+          setInput(text);
           setPending([{ kind: "prompt", id: found.id, label: found.title || "Untitled" }]);
-          pendingText.current[found.id] = found.content;
+          pendingText.current[found.id] = text;
         }
       } else if (seedFlow) {
         const found = f.find((x) => x.id === seedFlow);
         if (found) {
-          const text = [
-            `Run this flow step by step: ${found.name}`,
-            found.description || "",
-            ...found.steps.map((s, i) => {
-              const linked = s.kind === "prompt" ? p.find((x) => x.id === s.refId) : undefined;
-              return `${i + 1}. ${s.label}${linked ? `\n${linked.content}` : s.note ? `\n${s.note}` : ""}`;
-            }),
-          ]
-            .filter(Boolean)
-            .join("\n\n");
+          const text = resolve(
+            [
+              `Run this flow step by step: ${found.name}`,
+              found.description || "",
+              ...found.steps.map((s, i) => {
+                const linked = s.kind === "prompt" ? p.find((x) => x.id === s.refId) : undefined;
+                return `${i + 1}. ${s.label}${linked ? `\n${linked.content}` : s.note ? `\n${s.note}` : ""}`;
+              }),
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
+          );
           setInput(text);
           setPending([{ kind: "workflow", id: found.id, label: found.name }]);
           pendingText.current[found.id] = text;
         }
+
       } else {
         // Nothing seeded: bring back whatever was being typed before a refresh.
         const draft = readDraft(current.id);
