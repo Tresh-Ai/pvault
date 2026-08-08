@@ -235,7 +235,10 @@ export function PromptEditor() {
     try {
       const id = await persist(false);
       if (id) await dbHelpers.incrementPromptUsage(id);
-      navigate(`/project/${projectId}/chat/new${id ? `?prompt=${id}` : ""}`);
+      const vars = Object.keys(filledValues).length
+        ? `&vars=${encodeURIComponent(JSON.stringify(filledValues))}`
+        : "";
+      navigate(`/project/${projectId}/chat/new${id ? `?prompt=${id}${vars}` : ""}`);
     } catch {
       toast({ title: "Could not open the AI chat", variant: "destructive" });
     }
@@ -243,7 +246,7 @@ export function PromptEditor() {
 
   /** Hand the prompt to an external AI tool in a new tab. */
   const openExternal = async (target: typeof EXTERNAL_AI[number]) => {
-    const text = content.trim();
+    const text = resolvedContent.trim();
     if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
@@ -254,6 +257,7 @@ export function PromptEditor() {
     window.open(target.url(text), "_blank", "noopener,noreferrer");
     if (target.copy) toast({ title: `Copied - paste it into ${target.name}` });
   };
+
 
 
   const handleViewVersions = async () => {
