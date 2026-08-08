@@ -33,6 +33,7 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
   const [projectCounts, setProjectCounts] = useState<Record<string, { prompts: number; tools: number }>>({});
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadProjects();
