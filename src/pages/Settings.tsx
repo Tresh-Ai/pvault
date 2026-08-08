@@ -23,6 +23,7 @@ export function Settings({ onBack }: SettingsProps) {
     protectWithPIN: false,
     autosaveInterval: 1200,
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -253,23 +254,45 @@ export function Settings({ onBack }: SettingsProps) {
           </CardContent>
         </Card>
 
-        {/* Data Management */}
+        {/* Your data */}
         <Card>
           <CardHeader>
-            <CardTitle>Data Management</CardTitle>
-            <CardDescription>Export or clear your data</CardDescription>
+            <CardTitle>Your data</CardTitle>
+            <CardDescription>Back it up, bring it in, or wipe the device clean</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button onClick={exportData} variant="outline" className="w-full justify-start">
               <Download className="h-4 w-4 mr-2" />
-              Export All Data
+              Download backup
             </Button>
-            
+
+            <div>
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Import data
+              </Button>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Import adds to what you already have. Matching items are updated, nothing is deleted.
+                Accepts a PVault backup or a JSON list of prompts.
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => handleImportFile(e.target.files?.[0])}
+              />
+            </div>
+
             <Separator />
-            
+
             <Button onClick={clearAllData} variant="destructive" className="w-full justify-start">
               <Trash2 className="h-4 w-4 mr-2" />
-              Clear All Data
+              Clear all data
             </Button>
           </CardContent>
         </Card>
@@ -281,11 +304,22 @@ export function Settings({ onBack }: SettingsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>Version 1.1</p>
-              <p>Your offline AI prompt vault</p>
-              <p>All data is stored locally on your device</p>
+              <p>Version 1.2</p>
+              <p>A local-first workspace for everything you do with AI</p>
+              <p>Everything stays on your device</p>
             </div>
             <Separator className="my-4" />
+            <Button
+              variant="outline"
+              className="w-full justify-between mb-2"
+              onClick={() => navigate('/insights')}
+            >
+              <span className="flex items-center">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Insights
+              </span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
             <Button
               variant="outline"
               className="w-full justify-between mb-2"
@@ -308,6 +342,7 @@ export function Settings({ onBack }: SettingsProps) {
               </span>
               <ChevronRight className="h-4 w-4" />
             </Button>
+
 
           </CardContent>
         </Card>
