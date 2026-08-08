@@ -167,14 +167,33 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
         <div className="max-w-2xl mx-auto px-4">
           <div className="h-12 flex items-center justify-between">
             <Logo withWordmark />
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-medium tracking-widest uppercase text-muted-foreground">v1.1</span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={openCommandPalette}
+                className="h-8 gap-1.5 px-2 text-muted-foreground"
+                aria-label="Search everything"
+                title="Search everything (Ctrl/Cmd + K)"
+              >
+                <Command className="h-4 w-4" />
+                <span className="hidden sm:inline text-xs">Search all</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/insights')}
+                className="h-8 w-8 p-0"
+                aria-label="Insights"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onSettingsClick}
                 data-tour="settings"
-                className="h-8 w-8 p-0 rounded-full"
+                className="h-8 w-8 p-0"
                 aria-label="Settings"
               >
                 <Settings className="h-4 w-4" />
@@ -206,22 +225,24 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-5 pb-28">
         <div className="flex items-baseline justify-between mb-4">
-          <h1 data-tour="projects-heading" className="text-2xl font-semibold tracking-tight">Projects</h1>
+          <h1 data-tour="projects-heading" className="text-2xl font-semibold tracking-tight">Workspace</h1>
           <span className="text-xs text-muted-foreground">
-            {projects.length} {projects.length === 1 ? 'vault' : 'vaults'}
+            {projects.length} {projects.length === 1 ? 'project' : 'projects'}
           </span>
         </div>
 
         {filteredProjects.length === 0 ? (
           <div className="text-center py-16 max-w-sm mx-auto">
-            <div className="w-14 h-14 mx-auto bg-secondary rounded-2xl flex items-center justify-center mb-5">
+            <div className="w-14 h-14 mx-auto bg-secondary rounded-xl flex items-center justify-center mb-5">
               <Plus className="h-6 w-6 text-primary" strokeWidth={2.5} />
             </div>
             <h2 className="text-lg font-semibold mb-2">No projects yet</h2>
             <p className="text-sm text-muted-foreground">
-              Tap the button below to create your first vault.
+              A project holds the prompts, tools, flows and chats for one piece of work.
+              Create your first one below.
             </p>
           </div>
+
         ) : (
           <div className="space-y-3">
             {filteredProjects.map((project) => (
