@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { MarkdownPreview } from "@/components/markdown-preview";
+import { fillVariables } from "@/lib/variables";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { AttachPicker, type AttachPick } from "@/components/chat/attach-picker";
 import { chatHelpers, type Chat, type ChatAttachment, type ChatMessage } from "@/lib/chats";
