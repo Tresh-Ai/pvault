@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
-import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink } from "lucide-react";
+import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink, Braces } from "lucide-react";
 import { MarkdownToolbar } from "@/components/markdown-toolbar";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { useEditorHistory } from "@/hooks/use-editor-history";
 import { useToast } from "@/hooks/use-toast";
+import { extractVariables, fillVariables, humanizeVariable } from "@/lib/variables";
 import { cn } from "@/lib/utils";
 
 const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
