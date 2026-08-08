@@ -3,9 +3,12 @@ import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
   ArrowRight,
+  Braces,
   FileText,
+  Folder,
   Wrench,
   Download,
+  Search,
   Sparkle,
   MessageSquare,
   Lock,
