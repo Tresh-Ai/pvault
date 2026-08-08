@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
-import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink } from "lucide-react";
+import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink, Braces } from "lucide-react";
 import { MarkdownToolbar } from "@/components/markdown-toolbar";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { useEditorHistory } from "@/hooks/use-editor-history";
 import { useToast } from "@/hooks/use-toast";
+import { extractVariables, fillVariables, humanizeVariable } from "@/lib/variables";
 import { cn } from "@/lib/utils";
 
 const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
@@ -44,6 +45,7 @@ export function PromptEditor() {
   const [isPreview, setIsPreview] = useState(false);
   const [isVersionsOpen, setIsVersionsOpen] = useState(false);
   const [versions, setVersions] = useState<PromptVersion[]>([]);
+  const [varValues, setVarValues] = useState<Record<string, string>>({});
 
   const [autosaveInterval, setAutosaveInterval] = useState(1200);
 
@@ -233,7 +235,10 @@ export function PromptEditor() {
     try {
       const id = await persist(false);
       if (id) await dbHelpers.incrementPromptUsage(id);
-      navigate(`/project/${projectId}/chat/new${id ? `?prompt=${id}` : ""}`);
+      const vars = Object.keys(filledValues).length
+        ? `&vars=${encodeURIComponent(JSON.stringify(filledValues))}`
+        : "";
+      navigate(`/project/${projectId}/chat/new${id ? `?prompt=${id}${vars}` : ""}`);
     } catch {
       toast({ title: "Could not open the AI chat", variant: "destructive" });
     }
@@ -241,7 +246,7 @@ export function PromptEditor() {
 
   /** Hand the prompt to an external AI tool in a new tab. */
   const openExternal = async (target: typeof EXTERNAL_AI[number]) => {
-    const text = content.trim();
+    const text = resolvedContent.trim();
     if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
@@ -252,6 +257,7 @@ export function PromptEditor() {
     window.open(target.url(text), "_blank", "noopener,noreferrer");
     if (target.copy) toast({ title: `Copied - paste it into ${target.name}` });
   };
+
 
 
   const handleViewVersions = async () => {
@@ -280,6 +286,16 @@ export function PromptEditor() {
   const markDirty = () => { isDirty.current = true; };
   const canSave = title.trim() && content.trim();
   const isMono = format === 'json';
+
+  // {{variables}} found in the prompt, plus the version with values filled in
+  const variables = useMemo(() => extractVariables(content), [content]);
+  const filledValues = useMemo(
+    () => Object.fromEntries(Object.entries(varValues).filter(([, v]) => v && v.trim())),
+    [varValues],
+  );
+  const resolvedContent = useMemo(() => fillVariables(content, filledValues), [content, filledValues]);
+  const unfilled = variables.filter((name) => !filledValues[name]);
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -407,6 +423,37 @@ export function PromptEditor() {
           )}
         </div>
 
+        {/* Variables: fill them in once, then run */}
+        {variables.length > 0 && (
+          <div className="mb-4 rounded-lg border border-border bg-card p-3">
+            <div className="mb-2.5 flex items-center gap-2">
+              <Braces className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-medium">Variables</span>
+              <span className="text-xs text-muted-foreground">
+                {unfilled.length === 0 ? "all filled" : `${unfilled.length} to fill`}
+              </span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {variables.map((name) => (
+                <label key={name} className="block">
+                  <span className="mb-1 block text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {humanizeVariable(name)}
+                  </span>
+                  <input
+                    value={varValues[name] || ""}
+                    onChange={(e) => setVarValues((v) => ({ ...v, [name]: e.target.value }))}
+                    placeholder={`{{${name}}}`}
+                    className="w-full rounded-md bg-secondary px-2.5 py-1.5 text-sm placeholder:text-muted-foreground/60"
+                  />
+                </label>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Values are used when you run the prompt. The saved prompt keeps its {"{{placeholders}}"}.
+            </p>
+          </div>
+        )}
+
         {/* Run this prompt */}
         <div className="mb-4 -mx-4 px-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           <button
@@ -446,8 +493,9 @@ export function PromptEditor() {
 
         {/* Content / Preview */}
         {isPreview && format === 'markdown' ? (
-          <MarkdownPreview content={content} className="min-h-[60vh]" />
+          <MarkdownPreview content={resolvedContent} className="min-h-[60vh]" />
         ) : (
+
           <textarea
             ref={contentRef}
             value={content}

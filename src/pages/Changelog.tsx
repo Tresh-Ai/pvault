@@ -13,9 +13,44 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: "1.2",
+    date: "September 2026",
+    current: true,
+    sections: [
+      {
+        title: "Workspace",
+        items: [
+          "PVault is now positioned as a local-first AI workspace: projects hold prompts, tools, flows and chats together.",
+          "Onboarding rewritten around projects, variables and search, so new users understand flows before they build one.",
+        ],
+      },
+      {
+        title: "Search & insights",
+        items: [
+          "Ctrl+K / Cmd+K opens a command palette that searches every project, prompt, tool, flow and chat at once.",
+          "New Insights page with most used prompts, recently used, favorites and top tags, all counted on-device.",
+        ],
+      },
+      {
+        title: "Prompt variables",
+        items: [
+          "Use {{variables}} anywhere in a prompt and fill them in from the editor before running.",
+          "Filled values carry into PVault AI, ChatGPT, Claude and Gemini while the saved prompt keeps its placeholders.",
+        ],
+      },
+      {
+        title: "Data",
+        items: [
+          "Import data in Settings: backups merge into your workspace instead of replacing it, and matching items update.",
+          "Backups now include flows and chats alongside projects, prompts and tools.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.1",
     date: "August 2026",
-    current: true,
+
     sections: [
       {
         title: "PVault AI",

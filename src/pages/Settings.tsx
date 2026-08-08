@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Moon, Sun, Monitor, Trash2, Download, ScrollText, ChevronRight, Sparkle } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Monitor, Trash2, Download, Upload, ScrollText, ChevronRight, Sparkle, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { dbHelpers } from "@/lib/database";
+import { downloadBackup, importFromFile } from "@/lib/backup";
 import { applyTheme as applyStoredTheme, type ThemeChoice } from "@/lib/theme";
 
 
@@ -22,6 +23,7 @@ export function Settings({ onBack }: SettingsProps) {
     protectWithPIN: false,
     autosaveInterval: 1200,
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -76,38 +78,10 @@ export function Settings({ onBack }: SettingsProps) {
 
   const exportData = async () => {
     try {
-      const projects = await dbHelpers.getAllProjects();
-      const allPrompts = [];
-      const allTools = [];
-
-      for (const project of projects) {
-        const prompts = await dbHelpers.getProjectPrompts(project.id);
-        const tools = await dbHelpers.getProjectTools(project.id);
-        allPrompts.push(...prompts);
-        allTools.push(...tools);
-      }
-
-      const exportData = {
-        version: '1.1',
-        exportDate: new Date().toISOString(),
-        projects,
-        prompts: allPrompts,
-        tools: allTools,
-      };
-
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `pvault-backup-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
+      downloadBackup();
       toast({
-        title: "Export complete",
-        description: "Your data has been exported successfully.",
+        title: "Backup downloaded",
+        description: "Projects, prompts, tools, flows and chats are all in the file.",
       });
     } catch (error) {
       toast({
@@ -117,6 +91,29 @@ export function Settings({ onBack }: SettingsProps) {
       });
     }
   };
+
+  const handleImportFile = async (file?: File | null) => {
+    if (!file) return;
+    try {
+      const summary = await importFromFile(file);
+      const added = Object.values(summary.added).reduce((a, b) => a + b, 0);
+      const updated = Object.values(summary.updated).reduce((a, b) => a + b, 0);
+      toast({
+        title: "Import complete",
+        description: `${added} added, ${updated} updated. Nothing existing was deleted.`,
+      });
+      setTimeout(() => window.location.reload(), 900);
+    } catch (error) {
+      toast({
+        title: "Import failed",
+        description: error instanceof Error ? error.message : "Unable to read that file.",
+        variant: "destructive",
+      });
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
 
   const clearAllData = async () => {
     if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
@@ -257,23 +254,45 @@ export function Settings({ onBack }: SettingsProps) {
           </CardContent>
         </Card>
 
-        {/* Data Management */}
+        {/* Your data */}
         <Card>
           <CardHeader>
-            <CardTitle>Data Management</CardTitle>
-            <CardDescription>Export or clear your data</CardDescription>
+            <CardTitle>Your data</CardTitle>
+            <CardDescription>Back it up, bring it in, or wipe the device clean</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button onClick={exportData} variant="outline" className="w-full justify-start">
               <Download className="h-4 w-4 mr-2" />
-              Export All Data
+              Download backup
             </Button>
-            
+
+            <div>
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Import data
+              </Button>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Import adds to what you already have. Matching items are updated, nothing is deleted.
+                Accepts a PVault backup or a JSON list of prompts.
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => handleImportFile(e.target.files?.[0])}
+              />
+            </div>
+
             <Separator />
-            
+
             <Button onClick={clearAllData} variant="destructive" className="w-full justify-start">
               <Trash2 className="h-4 w-4 mr-2" />
-              Clear All Data
+              Clear all data
             </Button>
           </CardContent>
         </Card>
@@ -285,11 +304,22 @@ export function Settings({ onBack }: SettingsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>Version 1.1</p>
-              <p>Your offline AI prompt vault</p>
-              <p>All data is stored locally on your device</p>
+              <p>Version 1.2</p>
+              <p>A local-first workspace for everything you do with AI</p>
+              <p>Everything stays on your device</p>
             </div>
             <Separator className="my-4" />
+            <Button
+              variant="outline"
+              className="w-full justify-between mb-2"
+              onClick={() => navigate('/insights')}
+            >
+              <span className="flex items-center">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Insights
+              </span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
             <Button
               variant="outline"
               className="w-full justify-between mb-2"
@@ -312,6 +342,7 @@ export function Settings({ onBack }: SettingsProps) {
               </span>
               <ChevronRight className="h-4 w-4" />
             </Button>
+
 
           </CardContent>
         </Card>

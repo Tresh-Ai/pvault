@@ -15,25 +15,25 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
       {/* top bar */}
       <div className="relative px-6 pt-6 flex items-center justify-between">
         <Logo withWordmark />
-        <span className="text-xs text-muted-foreground">v1.1</span>
+        <span className="text-xs text-muted-foreground">v1.2</span>
       </div>
 
       {/* main */}
       <div className="relative flex-1 flex flex-col items-center justify-center text-center px-6 max-w-md mx-auto w-full">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          Offline-first · Private
+          Local-first · Private
         </div>
 
         <h1 className="text-5xl sm:text-6xl font-semibold leading-[1.02] tracking-tight mb-5">
-          Your AI memory,
+          Everything you use
           <br />
-          <span className="text-primary">organized.</span>
+          with AI. <span className="text-primary">Organized.</span>
         </h1>
 
         <p className="text-lg text-muted-foreground leading-relaxed mb-9 max-w-sm">
-          Save prompts, tools, and workflows by project. Fast to find,
-          faster to reuse.
+          One workspace for your prompts, tools, workflows and conversations.
+          Everything stays on your device.
         </p>
 
         <Button
@@ -48,8 +48,9 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
 
       {/* footer */}
       <div className="relative px-6 pb-8 text-xs text-muted-foreground text-center">
-        Free to use. No account. No cloud. Just your vault.
+        Free to use. No account. No cloud. Just your workspace.
       </div>
+
     </div>
   );
 }

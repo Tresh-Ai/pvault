@@ -1,16 +1,20 @@
 # PVault
 
-**Keep your AI prompts, tools and flows together, by project. Offline first, private by default.**
+**Everything you use with AI, in one workspace. Local-first, private by default.**
 
-PVault is an installable web app (PWA) for people who work with AI every day. Instead of scattering prompts across notes, screenshots and bookmarks, you organize them into projects, alongside the AI tools you use and repeatable flows that chain them together. Everything lives on your device.
+PVault is an installable web app (PWA) for people who work with AI every day. Instead of scattering prompts across notes, screenshots and bookmarks, you work in projects: each one holds the prompts, tools, repeatable flows and AI conversations for a piece of work. Everything stays on your device.
 
 - Projects that hold **Prompts**, **Tools**, **Flows** and **Chats**
 - Markdown editor with live preview, formatting toolbar, autosave, undo/redo and version history
 - **PVault AI**: bring your own OpenRouter key and run any saved prompt or flow in a built-in chat
 - Open a prompt straight in ChatGPT, Claude or Gemini
 - Export prompts as `.txt`, `.md` or `.json`, plus a full JSON backup
+- Prompt variables: reuse one prompt with `{{placeholders}}` you fill in before running
+- Ctrl+K / Cmd+K search across every project, prompt, tool, flow and chat
+- Local-only insights: most used prompts, recently used, favorites, top tags
+- Merge-import a backup without losing what you already have
 - Works fully offline, installable to your home screen
-- No accounts, no servers, no tracking. Data is stored in your browser's `localStorage`
+- No accounts, no servers, no tracking. Everything stays on your device
 
 ## Screens
 
@@ -24,7 +28,7 @@ Projects list, project view (Prompts / Tools / Flows / Chats), prompt editor, fl
 | Build | Vite 5 |
 | Styling | Tailwind CSS 3 + shadcn/ui |
 | Routing | React Router |
-| Storage | Browser `localStorage` (no backend) |
+| Storage | On-device browser storage (no backend) |
 | AI | OpenRouter, called directly from the browser with the user's own key |
 | Offline | Service worker + web app manifest |
 
