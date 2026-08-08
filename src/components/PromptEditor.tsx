@@ -287,6 +287,16 @@ export function PromptEditor() {
   const canSave = title.trim() && content.trim();
   const isMono = format === 'json';
 
+  // {{variables}} found in the prompt, plus the version with values filled in
+  const variables = useMemo(() => extractVariables(content), [content]);
+  const filledValues = useMemo(
+    () => Object.fromEntries(Object.entries(varValues).filter(([, v]) => v && v.trim())),
+    [varValues],
+  );
+  const resolvedContent = useMemo(() => fillVariables(content, filledValues), [content, filledValues]);
+  const unfilled = variables.filter((name) => !filledValues[name]);
+
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
