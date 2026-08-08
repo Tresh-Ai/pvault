@@ -142,7 +142,7 @@ export function importBackup(payload: unknown, fallbackProjectId?: string): Impo
     (items || []).map((item) => {
       const next = { ...item };
       if (!next.projectId && fallbackProjectId) next.projectId = fallbackProjectId;
-      if (!next.updatedAt) next.updatedAt = next.createdAt || new Date().toISOString();
+      if (!next.updatedAt) next.updatedAt = (next.createdAt as string) || new Date().toISOString();
       return next;
     });
 
