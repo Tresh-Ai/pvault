@@ -18,7 +18,7 @@ export interface ChatMessage {
 
 export interface Chat {
   id: string;
-  projectId: string;
+  projectId: string | null;
   title: string;
   model?: string;
   messages: ChatMessage[];
@@ -71,7 +71,7 @@ export const chatHelpers = {
     return read().find((c) => c.id === id);
   },
 
-  async createChat(projectId: string, title = "New chat", attachments: ChatAttachment[] = []): Promise<Chat> {
+  async createChat(projectId: string | null, title = "New chat", attachments: ChatAttachment[] = []): Promise<Chat> {
     const now = new Date();
     const chat: Chat = {
       id: uuidv4(),
