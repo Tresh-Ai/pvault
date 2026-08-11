@@ -19,11 +19,11 @@ import { openCommandPalette } from "@/components/command-palette";
 import { workflowHelpers } from "@/lib/workflows";
 
 interface ProjectsList {
-  onProjectSelect: (project: Project) => void;
-  onSettingsClick: () => void;
+  onProjectSelect?: (project: Project) => void;
+  onSettingsClick?: () => void;
 }
 
-export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList) {
+export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList = {}) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -194,7 +194,7 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onSettingsClick}
+                onClick={() => (onSettingsClick ? onSettingsClick() : navigate("/settings"))}
                 data-tour="settings"
                 className="h-8 w-8 p-0"
                 aria-label="Settings"
@@ -254,7 +254,7 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList)
                 project={project}
                 promptCount={projectCounts[project.id]?.prompts || 0}
                 toolCount={projectCounts[project.id]?.tools || 0}
-                onClick={() => onProjectSelect(project)}
+                onClick={() => (onProjectSelect ? onProjectSelect(project) : navigate(`/project/${project.id}`))}
                 onEdit={() => startEditProject(project)}
                 onDelete={() => handleDeleteProject(project.id)}
               />
