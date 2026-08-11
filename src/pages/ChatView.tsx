@@ -1,29 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import {
-  ArrowDown,
-  ArrowLeft,
-  Check,
-  Copy,
-  Loader2,
-  Pencil,
-  RefreshCw,
-  Settings2,
-  Sparkle,
-  X,
-} from "lucide-react";
+import { ArrowDown, Check, Copy, Loader2, Pencil, RefreshCw, Sparkle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { MarkdownPreview } from "@/components/markdown-preview";
-import { fillVariables } from "@/lib/variables";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { AttachPicker, type AttachPick } from "@/components/chat/attach-picker";
+import { VariablesDialog } from "@/components/variables-dialog";
 import { chatHelpers, type Chat, type ChatAttachment, type ChatMessage } from "@/lib/chats";
-import { dbHelpers, type Prompt, type Project, type Tool } from "@/lib/database";
+import { dbHelpers, type Prompt, type Tool } from "@/lib/database";
 import { workflowHelpers, type Workflow as Flow } from "@/lib/workflows";
 import { getAISettings, isAIReady, streamChat } from "@/lib/ai";
-import { cn } from "@/lib/utils";
+import { extractVariables, fillVariables } from "@/lib/variables";
+import { syncInBackground } from "@/lib/cloud";
 
 const SYSTEM_PROMPT =
   "You are PVault AI, a focused assistant that helps people run and refine their saved prompts. Be direct and useful. Use markdown when it helps readability.";
@@ -60,22 +50,20 @@ function writeDraft(chatId: string, draft: Draft) {
   }
 }
 
-function clearDraft(chatId: string) {
+const clearDraft = (chatId: string) => {
   try {
     localStorage.removeItem(draftKey(chatId));
   } catch {
     /* ignore */
   }
-}
-
+};
 
 export default function ChatView() {
-  const { projectId, chatId } = useParams<{ projectId: string; chatId: string }>();
+  const { projectId, chatId } = useParams<{ projectId?: string; chatId?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [params] = useSearchParams();
 
-  const [project, setProject] = useState<Project | null>(null);
   const [chat, setChat] = useState<Chat | null>(null);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [tools, setTools] = useState<Tool[]>([]);
@@ -87,47 +75,49 @@ export default function ChatView() {
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  const streamTextRef = useRef("");
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [varPick, setVarPick] = useState<AttachPick | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atBottom, setAtBottom] = useState(true);
   const ready = isAIReady();
   const ai = getAISettings();
 
+  useEffect(() => {
+    streamTextRef.current = streamText;
+  }, [streamText]);
+
   // ---- load ------------------------------------------------------------
   useEffect(() => {
-    if (!projectId) return;
     let cancelled = false;
     (async () => {
-      const [projects, p, t, f] = await Promise.all([
-        dbHelpers.getAllProjects(),
-        dbHelpers.getProjectPrompts(projectId),
-        dbHelpers.getProjectTools(projectId),
-        workflowHelpers.getProjectWorkflows(projectId),
+      const [p, t, f] = await Promise.all([
+        dbHelpers.getAllPrompts(),
+        dbHelpers.getAllTools(),
+        workflowHelpers.getAllWorkflows(),
       ]);
       if (cancelled) return;
-      setProject(projects.find((x) => x.id === projectId) ?? null);
-      setPrompts(p);
-      setTools(t);
-      setFlows(f);
+      const scope = <T extends { projectId: string }>(items: T[]) =>
+        projectId ? items.filter((i) => i.projectId === projectId) : items;
+      setPrompts(scope(p));
+      setTools(scope(t));
+      setFlows(scope(f));
 
-      let current: Chat | undefined;
-      if (chatId && chatId !== "new") current = await chatHelpers.getChat(chatId);
-      if (!current) {
-        current = await chatHelpers.createChat(projectId);
-        navigate(`/project/${projectId}/chat/${current.id}`, { replace: true });
-      }
-      setChat(current);
+      // Existing chat, if any. Nothing is created until the first message.
+      const current = chatId && chatId !== "new" ? await chatHelpers.getChat(chatId) : undefined;
+      setChat(current ?? null);
+      setInput("");
+      setPending([]);
+      pendingText.current = {};
 
-      // Seed from a prompt or flow passed through the URL.
       const seedPrompt = params.get("prompt");
       const seedFlow = params.get("flow");
-      // Variable values filled in before the hand-off, e.g. ?vars={"topic":"launch"}
       let seedVars: Record<string, string> = {};
       try {
         const raw = params.get("vars");
@@ -164,9 +154,7 @@ export default function ChatView() {
           setPending([{ kind: "workflow", id: found.id, label: found.name }]);
           pendingText.current[found.id] = text;
         }
-
-      } else {
-        // Nothing seeded: bring back whatever was being typed before a refresh.
+      } else if (current) {
         const draft = readDraft(current.id);
         if (draft) {
           setInput(draft.input);
@@ -181,13 +169,12 @@ export default function ChatView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, chatId]);
 
-  // ---- draft persistence: a refresh should never wipe your work ---------
+  // ---- draft persistence -----------------------------------------------
   useEffect(() => {
     if (!chat) return;
     writeDraft(chat.id, { input, pending, texts: pendingText.current });
   }, [chat?.id, input, pending]);
 
-  // If the tab closes or reloads mid-stream, keep the partial answer.
   useEffect(() => {
     const persist = () => {
       if (!streaming || !chat) return;
@@ -206,7 +193,6 @@ export default function ChatView() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streaming, chat]);
-
 
   // ---- autoscroll ------------------------------------------------------
   const scrollToBottom = useCallback((smooth = true) => {
@@ -235,16 +221,14 @@ export default function ChatView() {
       abortRef.current = controller;
       try {
         const full = await streamChat(
-          [
-            { role: "system", content: SYSTEM_PROMPT },
-            ...history.map((m) => ({ role: m.role, content: m.content })),
-          ],
+          [{ role: "system", content: SYSTEM_PROMPT }, ...history.map((m) => ({ role: m.role, content: m.content }))],
           (chunk) => setStreamText((t) => t + chunk),
           controller.signal,
         );
         const next: Chat = { ...base, messages: [...history, chatHelpers.newMessage("assistant", full)] };
         setChat(next);
         await chatHelpers.saveChat(next);
+        syncInBackground();
       } catch (e) {
         if ((e as Error).name === "AbortError") {
           const partial = streamTextRef.current;
@@ -265,35 +249,32 @@ export default function ChatView() {
     [toast],
   );
 
-  const streamTextRef = useRef("");
-  useEffect(() => {
-    streamTextRef.current = streamText;
-  }, [streamText]);
-
   const send = async () => {
-    if (!chat || streaming) return;
+    if (streaming) return;
     if (!ready) {
-      navigate(`/ai?returnTo=${encodeURIComponent(`/project/${projectId}/chat/${chat.id}`)}`);
+      navigate("/settings");
       return;
     }
     const text = input.trim();
     if (!text) return;
 
+    // A chat only exists once there is something in it.
+    let base = chat ?? (await chatHelpers.createChat(projectId ?? null, text.slice(0, 48) || "New chat"));
+    const isNew = !chat;
     const attachments = pending;
     const msg = chatHelpers.newMessage("user", text, attachments.length ? attachments : undefined);
-    let base = chatHelpers.trackUsage(chat, attachments);
-    if (!base.messages.length) {
-      base = { ...base, title: text.slice(0, 48) || "New chat", model: ai.model };
-    }
+    base = chatHelpers.trackUsage(base, attachments);
+    if (!base.messages.length) base = { ...base, title: text.slice(0, 48) || "New chat", model: ai.model };
+
     const history = [...base.messages, msg];
     const withUser: Chat = { ...base, messages: history };
     setChat(withUser);
     await chatHelpers.saveChat(withUser);
+    clearDraft(base.id);
     setInput("");
-    clearDraft(chat.id);
-
     setPending([]);
     setAtBottom(true);
+    if (isNew) navigate(`/c/${base.id}`, { replace: true });
     run(history, withUser);
   };
 
@@ -327,10 +308,22 @@ export default function ChatView() {
     setTimeout(() => setCopiedId(null), 1400);
   };
 
+  const attach = (item: AttachPick, values: Record<string, string> = {}) => {
+    const text = fillVariables(item.text, values);
+    pendingText.current[item.id] = text;
+    setPending((prev) =>
+      prev.some((a) => a.id === item.id) ? prev : [...prev, { kind: item.kind, id: item.id, label: item.label }],
+    );
+    setInput((prev) => (prev.trim() ? `${prev.trim()}\n\n${text}` : text));
+  };
+
+  /** Anything pulled in from the picker asks for its variables first. */
   const pick = (item: AttachPick) => {
-    pendingText.current[item.id] = item.text;
-    setPending((prev) => (prev.some((a) => a.id === item.id) ? prev : [...prev, { kind: item.kind, id: item.id, label: item.label }]));
-    setInput((prev) => (prev.trim() ? `${prev.trim()}\n\n${item.text}` : item.text));
+    if (extractVariables(item.text).length > 0) {
+      setVarPick(item);
+      return;
+    }
+    attach(item);
   };
 
   const removeAttachment = (id: string) => {
@@ -344,52 +337,21 @@ export default function ChatView() {
   const suggestions = useMemo(() => prompts.slice(0, 3), [prompts]);
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-background">
-      <header className="shrink-0 bg-background/85 backdrop-blur-md border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 h-12 flex items-center gap-2">
-          <button
-            onClick={() => navigate(`/project/${projectId}`)}
-            aria-label="Back to project"
-            className="shrink-0 h-8 w-8 -ml-1 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold truncate leading-tight">{chat?.title || "New chat"}</p>
-            <p className="text-[11px] text-muted-foreground truncate">
-              {project?.name}
-              {ready && ai.modelName ? ` · ${ai.modelName}` : ""}
-            </p>
-          </div>
-          <button
-            onClick={() => navigate(`/ai?returnTo=${encodeURIComponent(`/project/${projectId}/chat/${chatId}`)}`)}
-            aria-label="AI settings"
-            className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Settings2 className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
-
-      <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto">
+    <div className="h-full flex flex-col bg-background">
+      <div ref={scrollRef} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
           {empty && (
-            <div className="pt-16 text-center">
+            <div className="pt-14 text-center">
               <div className="w-11 h-11 mx-auto rounded-2xl bg-secondary border border-border flex items-center justify-center mb-4">
                 <Sparkle className="h-5 w-5 text-primary" />
               </div>
-              <h2 className="text-xl font-semibold tracking-tight">Run a prompt</h2>
+              <h2 className="text-xl font-semibold tracking-tight">What are we working on?</h2>
               <p className="text-sm text-muted-foreground mt-1.5 max-w-xs mx-auto">
-                Tap <span className="text-foreground">+</span> to pull in a saved prompt, flow or tool - then send.
+                Tap <span className="text-foreground">+</span> to pull in a saved prompt, flow or tool, then send.
               </p>
               {!ready && (
-                <Button
-                  className="rounded-full mt-5"
-                  onClick={() =>
-                    navigate(`/ai?returnTo=${encodeURIComponent(`/project/${projectId}/chat/${chatId}`)}`)
-                  }
-                >
-                  Connect PVault AI
+                <Button className="rounded-full mt-5" onClick={() => navigate("/settings")}>
+                  Connect a model
                 </Button>
               )}
               {ready && suggestions.length > 0 && (
@@ -398,7 +360,7 @@ export default function ChatView() {
                     <button
                       key={p.id}
                       onClick={() => pick({ kind: "prompt", id: p.id, label: p.title || "Untitled", text: p.content })}
-                      className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-left hover:bg-secondary/60 transition-colors"
+                      className="w-full rounded-lg border border-border bg-card px-4 py-3 text-left hover:bg-secondary/60 transition-colors"
                     >
                       <p className="text-sm font-medium truncate">{p.title || "Untitled"}</p>
                       <p className="text-xs text-muted-foreground line-clamp-1">{p.content}</p>
@@ -413,7 +375,7 @@ export default function ChatView() {
             m.role === "user" ? (
               <div key={m.id} className="flex flex-col items-end gap-1.5">
                 {editingId === m.id ? (
-                  <div className="w-full rounded-3xl border border-border bg-card p-3">
+                  <div className="w-full rounded-2xl border border-border bg-card p-3">
                     <textarea
                       value={editDraft}
                       onChange={(e) => setEditDraft(e.target.value)}
@@ -434,19 +396,14 @@ export default function ChatView() {
                     {m.attachments && m.attachments.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 justify-end">
                         {m.attachments.map((a) => (
-                          <span
-                            key={a.id}
-                            className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground"
-                          >
-                            <span className="text-primary capitalize">
-                              {a.kind === "workflow" ? "flow" : a.kind}
-                            </span>{" "}
+                          <span key={a.id} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
+                            <span className="text-primary capitalize">{a.kind === "workflow" ? "flow" : a.kind}</span>{" "}
                             {a.label}
                           </span>
                         ))}
                       </div>
                     )}
-                    <div className="max-w-[85%] rounded-3xl bg-primary px-4 py-2.5 text-primary-foreground text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                    <div className="max-w-[85%] rounded-2xl bg-primary px-4 py-2.5 text-primary-foreground text-[15px] leading-relaxed whitespace-pre-wrap break-words">
                       {m.content}
                     </div>
                     <div className="flex items-center gap-0.5 opacity-60">
@@ -529,7 +486,7 @@ export default function ChatView() {
             attachments={pending}
             onRemoveAttachment={removeAttachment}
             streaming={streaming}
-            placeholder={ready ? "Message PVault AI…" : "Connect PVault AI to start…"}
+            placeholder={ready ? `Message ${ai.modelName || "PVault AI"}…` : "Connect a model in Settings…"}
           />
         </div>
       </div>
@@ -543,8 +500,19 @@ export default function ChatView() {
         onPick={pick}
       />
 
+      <VariablesDialog
+        open={!!varPick}
+        onOpenChange={(open) => !open && setVarPick(null)}
+        names={varPick ? extractVariables(varPick.text) : []}
+        confirmLabel="Add to chat"
+        onConfirm={(values) => {
+          if (varPick) attach(varPick, values);
+          setVarPick(null);
+        }}
+      />
+
       <Dialog open={expanded} onOpenChange={setExpanded}>
-        <DialogContent className="max-w-2xl h-[85vh] rounded-3xl p-0 flex flex-col gap-0">
+        <DialogContent className="max-w-2xl h-[85vh] rounded-2xl p-0 flex flex-col gap-0">
           <DialogHeader className="px-5 py-4 border-b border-border flex-row items-center justify-between space-y-0">
             <DialogTitle className="text-base">Compose</DialogTitle>
             <button onClick={() => setExpanded(false)} aria-label="Close" className="text-muted-foreground">
