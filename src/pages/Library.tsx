@@ -3,14 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { FileText, GitBranch, Wrench } from "lucide-react";
 import { dbHelpers, type Project, type Prompt, type Tool } from "@/lib/database";
 import { workflowHelpers, type Workflow as Flow } from "@/lib/workflows";
-import { SearchInput } from "@/components/ui/search-input";
 
 type Kind = "prompts" | "tools" | "flows";
 
-const META: Record<Kind, { title: string; blurb: string; icon: typeof FileText }> = {
-  prompts: { title: "Prompts", blurb: "Everything you have written, most recently used first.", icon: FileText },
-  tools: { title: "Tools", blurb: "The AI tools you keep coming back to.", icon: Wrench },
-  flows: { title: "Flows", blurb: "Chained steps you can run again in one go.", icon: GitBranch },
+const META: Record<Kind, { title: string; icon: typeof FileText }> = {
+  prompts: { title: "Prompts", icon: FileText },
+  tools: { title: "Tools", icon: Wrench },
+  flows: { title: "Flows", icon: GitBranch },
 };
 
 const recency = (d?: Date | string) => (d ? new Date(d).getTime() : 0);
@@ -23,7 +22,7 @@ export default function Library() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [tools, setTools] = useState<Tool[]>([]);
   const [flows, setFlows] = useState<Flow[]>([]);
-  const [query, setQuery] = useState("");
+  const query = "";
 
   useEffect(() => {
     Promise.all([
@@ -41,7 +40,7 @@ export default function Library() {
 
   const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? "No project";
   const active = (kind in META ? kind : "prompts") as Kind;
-  const { title, blurb, icon: Icon } = META[active];
+  const { title, icon: Icon } = META[active];
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -84,14 +83,13 @@ export default function Library() {
   }, [active, prompts, tools, flows, projects, query]);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 pb-20">
-      <div className="flex items-center gap-2.5 mb-1">
-        <Icon className="h-5 w-5 text-primary" />
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+    <div className="max-w-3xl mx-auto px-4 py-5 pb-24">
+      <div className="flex items-center justify-between mb-3">
+        <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Icon className="h-4 w-4" /> {title}
+        </span>
+        <span className="text-xs text-muted-foreground">{rows.length}</span>
       </div>
-      <p className="text-sm text-muted-foreground mb-5">{blurb}</p>
-
-      <SearchInput value={query} onChange={setQuery} placeholder={`Search ${title.toLowerCase()}...`} className="mb-4" />
 
       {rows.length === 0 ? (
         <p className="py-16 text-center text-sm text-muted-foreground">
