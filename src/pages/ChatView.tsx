@@ -14,6 +14,7 @@ import { workflowHelpers, type Workflow as Flow } from "@/lib/workflows";
 import { getAISettings, isAIReady, streamChat } from "@/lib/ai";
 import { extractVariables, fillVariables } from "@/lib/variables";
 import { syncInBackground } from "@/lib/cloud";
+import { buildWorkspaceContext } from "@/lib/workspace-context";
 
 const SYSTEM_PROMPT = [
   "You are PVault AI, the planning partner inside the user's local AI workspace.",
@@ -225,8 +226,12 @@ export default function ChatView() {
       const controller = new AbortController();
       abortRef.current = controller;
       try {
+        const workspace = await buildWorkspaceContext(projectId ?? null);
         const full = await streamChat(
-          [{ role: "system", content: SYSTEM_PROMPT }, ...history.map((m) => ({ role: m.role, content: m.content }))],
+          [
+            { role: "system", content: `${SYSTEM_PROMPT}\n\n--- Workspace inventory ---\n${workspace}` },
+            ...history.map((m) => ({ role: m.role, content: m.content })),
+          ],
           (chunk) => setStreamText((t) => t + chunk),
           controller.signal,
         );
@@ -251,7 +256,7 @@ export default function ChatView() {
         abortRef.current = null;
       }
     },
-    [toast],
+    [toast, projectId],
   );
 
   const send = async () => {
