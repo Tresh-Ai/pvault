@@ -14,9 +14,15 @@ import { workflowHelpers, type Workflow as Flow } from "@/lib/workflows";
 import { getAISettings, isAIReady, streamChat } from "@/lib/ai";
 import { extractVariables, fillVariables } from "@/lib/variables";
 import { syncInBackground } from "@/lib/cloud";
+import { buildWorkspaceContext } from "@/lib/workspace-context";
 
-const SYSTEM_PROMPT =
-  "You are PVault AI, a focused assistant that helps people run and refine their saved prompts. Be direct and useful. Use markdown when it helps readability.";
+const SYSTEM_PROMPT = [
+  "You are PVault AI, the planning partner inside the user's local AI workspace.",
+  "You help them decide what to work on, plan the steps, and get it done using what they already have saved: projects, prompts, tools and flows.",
+  "You can see an inventory of their workspace below. Reference their saved prompts, tools and flows by name when they are useful, and say plainly when something is missing and worth saving.",
+  "Be direct and practical. Prefer short plans with concrete next steps. Use markdown when it helps readability.",
+].join(" ");
+
 
 interface Draft {
   input: string;
@@ -220,8 +226,12 @@ export default function ChatView() {
       const controller = new AbortController();
       abortRef.current = controller;
       try {
+        const workspace = await buildWorkspaceContext(projectId ?? null);
         const full = await streamChat(
-          [{ role: "system", content: SYSTEM_PROMPT }, ...history.map((m) => ({ role: m.role, content: m.content }))],
+          [
+            { role: "system", content: `${SYSTEM_PROMPT}\n\n--- Workspace inventory ---\n${workspace}` },
+            ...history.map((m) => ({ role: m.role, content: m.content })),
+          ],
           (chunk) => setStreamText((t) => t + chunk),
           controller.signal,
         );
@@ -246,7 +256,7 @@ export default function ChatView() {
         abortRef.current = null;
       }
     },
-    [toast],
+    [toast, projectId],
   );
 
   const send = async () => {
