@@ -296,16 +296,6 @@ export const dbHelpers = {
     return prompts.filter(p => p.projectId === projectId);
   },
 
-  async getAllPrompts(): Promise<Prompt[]> {
-    await this.migratePromptsToVersioning();
-    return storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
-  },
-
-  async getAllTools(): Promise<Tool[]> {
-    return storage.get<Tool>(STORAGE_KEYS.TOOLS);
-  },
-
-
   // Tools
   async createTool(data: Omit<Tool, 'id' | 'createdAt' | 'updatedAt' | 'usageCount' | 'lastUsedAt'>): Promise<Tool> {
     const now = new Date();

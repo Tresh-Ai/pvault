@@ -63,7 +63,7 @@ export function InstallPrompt({ compact = false }: { compact?: boolean }) {
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold tracking-tight">Install PVault as an app</h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Add it to your home screen for full-screen access and true offline use - your vault
+            Add it to your home screen for full-screen access and true offline use — your vault
             works with no connection at all.
           </p>
 
@@ -77,7 +77,7 @@ export function InstallPrompt({ compact = false }: { compact?: boolean }) {
                   <p className="inline-flex items-center gap-1.5">
                     2. Choose <Plus className="h-3.5 w-3.5" /> Add to Home Screen
                   </p>
-                  <p>3. Tap Add - done.</p>
+                  <p>3. Tap Add — done.</p>
                 </>
               ) : (
                 <p>

@@ -1,75 +1,39 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowDown, Check, Copy, Loader2, Pencil, RefreshCw, Sparkle, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  Check,
+  Copy,
+  Loader2,
+  Pencil,
+  RefreshCw,
+  Settings2,
+  Sparkle,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { AttachPicker, type AttachPick } from "@/components/chat/attach-picker";
-import { VariablesDialog } from "@/components/variables-dialog";
 import { chatHelpers, type Chat, type ChatAttachment, type ChatMessage } from "@/lib/chats";
-import { dbHelpers, type Prompt, type Tool } from "@/lib/database";
+import { dbHelpers, type Prompt, type Project, type Tool } from "@/lib/database";
 import { workflowHelpers, type Workflow as Flow } from "@/lib/workflows";
 import { getAISettings, isAIReady, streamChat } from "@/lib/ai";
-import { extractVariables, fillVariables } from "@/lib/variables";
-import { syncInBackground } from "@/lib/cloud";
-import { buildWorkspaceContext } from "@/lib/workspace-context";
+import { cn } from "@/lib/utils";
 
-const SYSTEM_PROMPT = [
-  "You are PVault AI, the planning partner inside the user's local AI workspace.",
-  "You help them decide what to work on, plan the steps, and get it done using what they already have saved: projects, prompts, tools and flows.",
-  "You can see an inventory of their workspace below. Reference their saved prompts, tools and flows by name when they are useful, and say plainly when something is missing and worth saving.",
-  "Be direct and practical. Prefer short plans with concrete next steps. Use markdown when it helps readability.",
-].join(" ");
-
-
-interface Draft {
-  input: string;
-  pending: ChatAttachment[];
-  texts: Record<string, string>;
-}
-
-const draftKey = (chatId: string) => `pvault_chat_draft_${chatId}`;
-
-function readDraft(chatId: string): Draft | null {
-  try {
-    const raw = localStorage.getItem(draftKey(chatId));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Draft;
-    if (!parsed.input && !parsed.pending?.length) return null;
-    return { input: parsed.input ?? "", pending: parsed.pending ?? [], texts: parsed.texts ?? {} };
-  } catch {
-    return null;
-  }
-}
-
-function writeDraft(chatId: string, draft: Draft) {
-  try {
-    if (!draft.input.trim() && !draft.pending.length) {
-      localStorage.removeItem(draftKey(chatId));
-      return;
-    }
-    localStorage.setItem(draftKey(chatId), JSON.stringify(draft));
-  } catch {
-    /* storage full or unavailable */
-  }
-}
-
-const clearDraft = (chatId: string) => {
-  try {
-    localStorage.removeItem(draftKey(chatId));
-  } catch {
-    /* ignore */
-  }
-};
+const SYSTEM_PROMPT =
+  "You are PVault AI, a focused assistant that helps people run and refine their saved prompts. Be direct and useful. Use markdown when it helps readability.";
 
 export default function ChatView() {
-  const { projectId, chatId } = useParams<{ projectId?: string; chatId?: string }>();
+  const { projectId, chatId } = useParams<{ projectId: string; chatId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [params] = useSearchParams();
 
+  const [project, setProject] = useState<Project | null>(null);
   const [chat, setChat] = useState<Chat | null>(null);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [tools, setTools] = useState<Tool[]>([]);
@@ -81,91 +45,69 @@ export default function ChatView() {
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const abortRef = useRef<AbortController | null>(null);
-  const streamTextRef = useRef("");
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [varPick, setVarPick] = useState<AttachPick | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atBottom, setAtBottom] = useState(true);
   const ready = isAIReady();
   const ai = getAISettings();
 
-  useEffect(() => {
-    streamTextRef.current = streamText;
-  }, [streamText]);
-
   // ---- load ------------------------------------------------------------
   useEffect(() => {
+    if (!projectId) return;
     let cancelled = false;
     (async () => {
-      const [p, t, f] = await Promise.all([
-        dbHelpers.getAllPrompts(),
-        dbHelpers.getAllTools(),
-        workflowHelpers.getAllWorkflows(),
+      const [projects, p, t, f] = await Promise.all([
+        dbHelpers.getAllProjects(),
+        dbHelpers.getProjectPrompts(projectId),
+        dbHelpers.getProjectTools(projectId),
+        workflowHelpers.getProjectWorkflows(projectId),
       ]);
       if (cancelled) return;
-      const scope = <T extends { projectId: string }>(items: T[]) =>
-        projectId ? items.filter((i) => i.projectId === projectId) : items;
-      setPrompts(scope(p));
-      setTools(scope(t));
-      setFlows(scope(f));
+      setProject(projects.find((x) => x.id === projectId) ?? null);
+      setPrompts(p);
+      setTools(t);
+      setFlows(f);
 
-      // Existing chat, if any. Nothing is created until the first message.
-      const current = chatId && chatId !== "new" ? await chatHelpers.getChat(chatId) : undefined;
-      setChat(current ?? null);
-      setInput("");
-      setPending([]);
-      pendingText.current = {};
+      let current: Chat | undefined;
+      if (chatId && chatId !== "new") current = await chatHelpers.getChat(chatId);
+      if (!current) {
+        current = await chatHelpers.createChat(projectId);
+        navigate(`/project/${projectId}/chat/${current.id}`, { replace: true });
+      }
+      setChat(current);
 
+      // Seed from a prompt or flow passed through the URL.
       const seedPrompt = params.get("prompt");
       const seedFlow = params.get("flow");
-      let seedVars: Record<string, string> = {};
-      try {
-        const raw = params.get("vars");
-        if (raw) seedVars = JSON.parse(raw) as Record<string, string>;
-      } catch {
-        seedVars = {};
-      }
-      const resolve = (text: string) => fillVariables(text, seedVars);
-
       if (seedPrompt) {
         const found = p.find((x) => x.id === seedPrompt);
         if (found) {
-          const text = resolve(found.content);
-          setInput(text);
+          setInput(found.content);
           setPending([{ kind: "prompt", id: found.id, label: found.title || "Untitled" }]);
-          pendingText.current[found.id] = text;
+          pendingText.current[found.id] = found.content;
         }
       } else if (seedFlow) {
         const found = f.find((x) => x.id === seedFlow);
         if (found) {
-          const text = resolve(
-            [
-              `Run this flow step by step: ${found.name}`,
-              found.description || "",
-              ...found.steps.map((s, i) => {
-                const linked = s.kind === "prompt" ? p.find((x) => x.id === s.refId) : undefined;
-                return `${i + 1}. ${s.label}${linked ? `\n${linked.content}` : s.note ? `\n${s.note}` : ""}`;
-              }),
-            ]
-              .filter(Boolean)
-              .join("\n\n"),
-          );
+          const text = [
+            `Run this flow step by step: ${found.name}`,
+            found.description || "",
+            ...found.steps.map((s, i) => {
+              const linked = s.kind === "prompt" ? p.find((x) => x.id === s.refId) : undefined;
+              return `${i + 1}. ${s.label}${linked ? `\n${linked.content}` : s.note ? `\n${s.note}` : ""}`;
+            }),
+          ]
+            .filter(Boolean)
+            .join("\n\n");
           setInput(text);
           setPending([{ kind: "workflow", id: found.id, label: found.name }]);
           pendingText.current[found.id] = text;
-        }
-      } else if (current) {
-        const draft = readDraft(current.id);
-        if (draft) {
-          setInput(draft.input);
-          setPending(draft.pending);
-          pendingText.current = { ...pendingText.current, ...draft.texts };
         }
       }
     })();
@@ -174,31 +116,6 @@ export default function ChatView() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, chatId]);
-
-  // ---- draft persistence -----------------------------------------------
-  useEffect(() => {
-    if (!chat) return;
-    writeDraft(chat.id, { input, pending, texts: pendingText.current });
-  }, [chat?.id, input, pending]);
-
-  useEffect(() => {
-    const persist = () => {
-      if (!streaming || !chat) return;
-      const partial = streamTextRef.current;
-      if (!partial.trim()) return;
-      void chatHelpers.saveChat({
-        ...chat,
-        messages: [...chat.messages, chatHelpers.newMessage("assistant", partial)],
-      });
-    };
-    window.addEventListener("pagehide", persist);
-    window.addEventListener("beforeunload", persist);
-    return () => {
-      window.removeEventListener("pagehide", persist);
-      window.removeEventListener("beforeunload", persist);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [streaming, chat]);
 
   // ---- autoscroll ------------------------------------------------------
   const scrollToBottom = useCallback((smooth = true) => {
@@ -226,10 +143,9 @@ export default function ChatView() {
       const controller = new AbortController();
       abortRef.current = controller;
       try {
-        const workspace = await buildWorkspaceContext(projectId ?? null);
         const full = await streamChat(
           [
-            { role: "system", content: `${SYSTEM_PROMPT}\n\n--- Workspace inventory ---\n${workspace}` },
+            { role: "system", content: SYSTEM_PROMPT },
             ...history.map((m) => ({ role: m.role, content: m.content })),
           ],
           (chunk) => setStreamText((t) => t + chunk),
@@ -238,7 +154,6 @@ export default function ChatView() {
         const next: Chat = { ...base, messages: [...history, chatHelpers.newMessage("assistant", full)] };
         setChat(next);
         await chatHelpers.saveChat(next);
-        syncInBackground();
       } catch (e) {
         if ((e as Error).name === "AbortError") {
           const partial = streamTextRef.current;
@@ -256,35 +171,36 @@ export default function ChatView() {
         abortRef.current = null;
       }
     },
-    [toast, projectId],
+    [toast],
   );
 
+  const streamTextRef = useRef("");
+  useEffect(() => {
+    streamTextRef.current = streamText;
+  }, [streamText]);
+
   const send = async () => {
-    if (streaming) return;
+    if (!chat || streaming) return;
     if (!ready) {
-      navigate("/settings");
+      navigate(`/ai?returnTo=${encodeURIComponent(`/project/${projectId}/chat/${chat.id}`)}`);
       return;
     }
     const text = input.trim();
     if (!text) return;
 
-    // A chat only exists once there is something in it.
-    let base = chat ?? (await chatHelpers.createChat(projectId ?? null, text.slice(0, 48) || "New chat"));
-    const isNew = !chat;
     const attachments = pending;
     const msg = chatHelpers.newMessage("user", text, attachments.length ? attachments : undefined);
-    base = chatHelpers.trackUsage(base, attachments);
-    if (!base.messages.length) base = { ...base, title: text.slice(0, 48) || "New chat", model: ai.model };
-
+    let base = chatHelpers.trackUsage(chat, attachments);
+    if (!base.messages.length) {
+      base = { ...base, title: text.slice(0, 48) || "New chat", model: ai.model };
+    }
     const history = [...base.messages, msg];
     const withUser: Chat = { ...base, messages: history };
     setChat(withUser);
     await chatHelpers.saveChat(withUser);
-    clearDraft(base.id);
     setInput("");
     setPending([]);
     setAtBottom(true);
-    if (isNew) navigate(`/c/${base.id}`, { replace: true });
     run(history, withUser);
   };
 
@@ -318,22 +234,10 @@ export default function ChatView() {
     setTimeout(() => setCopiedId(null), 1400);
   };
 
-  const attach = (item: AttachPick, values: Record<string, string> = {}) => {
-    const text = fillVariables(item.text, values);
-    pendingText.current[item.id] = text;
-    setPending((prev) =>
-      prev.some((a) => a.id === item.id) ? prev : [...prev, { kind: item.kind, id: item.id, label: item.label }],
-    );
-    setInput((prev) => (prev.trim() ? `${prev.trim()}\n\n${text}` : text));
-  };
-
-  /** Anything pulled in from the picker asks for its variables first. */
   const pick = (item: AttachPick) => {
-    if (extractVariables(item.text).length > 0) {
-      setVarPick(item);
-      return;
-    }
-    attach(item);
+    pendingText.current[item.id] = item.text;
+    setPending((prev) => (prev.some((a) => a.id === item.id) ? prev : [...prev, { kind: item.kind, id: item.id, label: item.label }]));
+    setInput((prev) => (prev.trim() ? `${prev.trim()}\n\n${item.text}` : item.text));
   };
 
   const removeAttachment = (id: string) => {
@@ -347,21 +251,52 @@ export default function ChatView() {
   const suggestions = useMemo(() => prompts.slice(0, 3), [prompts]);
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      <div ref={scrollRef} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto">
+    <div className="h-[100dvh] flex flex-col bg-background">
+      <header className="shrink-0 bg-background/85 backdrop-blur-md border-b border-border">
+        <div className="max-w-2xl mx-auto px-4 h-12 flex items-center gap-2">
+          <button
+            onClick={() => navigate(`/project/${projectId}`)}
+            aria-label="Back to project"
+            className="shrink-0 h-8 w-8 -ml-1 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold truncate leading-tight">{chat?.title || "New chat"}</p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {project?.name}
+              {ready && ai.modelName ? ` · ${ai.modelName}` : ""}
+            </p>
+          </div>
+          <button
+            onClick={() => navigate(`/ai?returnTo=${encodeURIComponent(`/project/${projectId}/chat/${chatId}`)}`)}
+            aria-label="AI settings"
+            className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Settings2 className="h-4 w-4" />
+          </button>
+        </div>
+      </header>
+
+      <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
           {empty && (
-            <div className="pt-14 text-center">
+            <div className="pt-16 text-center">
               <div className="w-11 h-11 mx-auto rounded-2xl bg-secondary border border-border flex items-center justify-center mb-4">
                 <Sparkle className="h-5 w-5 text-primary" />
               </div>
-              <h2 className="text-xl font-semibold tracking-tight">What are we working on?</h2>
+              <h2 className="text-xl font-semibold tracking-tight">Run a prompt</h2>
               <p className="text-sm text-muted-foreground mt-1.5 max-w-xs mx-auto">
-                Tap <span className="text-foreground">+</span> to pull in a saved prompt, flow or tool, then send.
+                Tap <span className="text-foreground">+</span> to pull in a saved prompt, flow or tool — then send.
               </p>
               {!ready && (
-                <Button className="rounded-full mt-5" onClick={() => navigate("/settings")}>
-                  Connect a model
+                <Button
+                  className="rounded-full mt-5"
+                  onClick={() =>
+                    navigate(`/ai?returnTo=${encodeURIComponent(`/project/${projectId}/chat/${chatId}`)}`)
+                  }
+                >
+                  Connect PVault AI
                 </Button>
               )}
               {ready && suggestions.length > 0 && (
@@ -370,7 +305,7 @@ export default function ChatView() {
                     <button
                       key={p.id}
                       onClick={() => pick({ kind: "prompt", id: p.id, label: p.title || "Untitled", text: p.content })}
-                      className="w-full rounded-lg border border-border bg-card px-4 py-3 text-left hover:bg-secondary/60 transition-colors"
+                      className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-left hover:bg-secondary/60 transition-colors"
                     >
                       <p className="text-sm font-medium truncate">{p.title || "Untitled"}</p>
                       <p className="text-xs text-muted-foreground line-clamp-1">{p.content}</p>
@@ -385,7 +320,7 @@ export default function ChatView() {
             m.role === "user" ? (
               <div key={m.id} className="flex flex-col items-end gap-1.5">
                 {editingId === m.id ? (
-                  <div className="w-full rounded-2xl border border-border bg-card p-3">
+                  <div className="w-full rounded-3xl border border-border bg-card p-3">
                     <textarea
                       value={editDraft}
                       onChange={(e) => setEditDraft(e.target.value)}
@@ -406,14 +341,19 @@ export default function ChatView() {
                     {m.attachments && m.attachments.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 justify-end">
                         {m.attachments.map((a) => (
-                          <span key={a.id} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
-                            <span className="text-primary capitalize">{a.kind === "workflow" ? "flow" : a.kind}</span>{" "}
+                          <span
+                            key={a.id}
+                            className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground"
+                          >
+                            <span className="text-primary capitalize">
+                              {a.kind === "workflow" ? "flow" : a.kind}
+                            </span>{" "}
                             {a.label}
                           </span>
                         ))}
                       </div>
                     )}
-                    <div className="max-w-[85%] rounded-2xl bg-primary px-4 py-2.5 text-primary-foreground text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                    <div className="max-w-[85%] rounded-3xl bg-primary px-4 py-2.5 text-primary-foreground text-[15px] leading-relaxed whitespace-pre-wrap break-words">
                       {m.content}
                     </div>
                     <div className="flex items-center gap-0.5 opacity-60">
@@ -496,7 +436,7 @@ export default function ChatView() {
             attachments={pending}
             onRemoveAttachment={removeAttachment}
             streaming={streaming}
-            placeholder={ready ? `Message ${ai.modelName || "PVault AI"}…` : "Connect a model in Settings…"}
+            placeholder={ready ? "Message PVault AI…" : "Connect PVault AI to start…"}
           />
         </div>
       </div>
@@ -510,19 +450,8 @@ export default function ChatView() {
         onPick={pick}
       />
 
-      <VariablesDialog
-        open={!!varPick}
-        onOpenChange={(open) => !open && setVarPick(null)}
-        names={varPick ? extractVariables(varPick.text) : []}
-        confirmLabel="Add to chat"
-        onConfirm={(values) => {
-          if (varPick) attach(varPick, values);
-          setVarPick(null);
-        }}
-      />
-
       <Dialog open={expanded} onOpenChange={setExpanded}>
-        <DialogContent className="max-w-2xl h-[85vh] rounded-2xl p-0 flex flex-col gap-0">
+        <DialogContent className="max-w-2xl h-[85vh] rounded-3xl p-0 flex flex-col gap-0">
           <DialogHeader className="px-5 py-4 border-b border-border flex-row items-center justify-between space-y-0">
             <DialogTitle className="text-base">Compose</DialogTitle>
             <button onClick={() => setExpanded(false)} aria-label="Close" className="text-muted-foreground">

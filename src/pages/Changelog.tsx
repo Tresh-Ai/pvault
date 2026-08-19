@@ -13,78 +13,10 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
-    version: "1.2",
-    date: "September 2026",
-    current: true,
-    sections: [
-      {
-        title: "Workspace",
-        items: [
-          "PVault is now positioned as a local-first AI workspace: projects hold prompts, tools, flows and chats together.",
-          "Onboarding rewritten around projects, variables and search, so new users understand flows before they build one.",
-        ],
-      },
-      {
-        title: "Search & insights",
-        items: [
-          "Ctrl+K / Cmd+K opens a command palette that searches every project, prompt, tool, flow and chat at once.",
-          "New Insights page with most used prompts, recently used, favorites and top tags, all counted on-device.",
-        ],
-      },
-      {
-        title: "Prompt variables",
-        items: [
-          "Use {{variables}} anywhere in a prompt and fill them in from the editor before running.",
-          "Filled values carry into PVault AI, ChatGPT, Claude and Gemini while the saved prompt keeps its placeholders.",
-        ],
-      },
-      {
-        title: "Data",
-        items: [
-          "Import data in Settings: backups merge into your workspace instead of replacing it, and matching items update.",
-          "Backups now include flows and chats alongside projects, prompts and tools.",
-        ],
-      },
-    ],
-  },
-  {
-    version: "1.1",
-    date: "August 2026",
-
-    sections: [
-      {
-        title: "PVault AI",
-        items: [
-          "Built-in AI chat: bring your own OpenRouter key and run saved prompts without leaving PVault.",
-          "Guided AI setup page explaining why OpenRouter and how to get a key, with a searchable model list that puts free and high-quality models first.",
-          "ChatGPT-style chat: fixed auto-growing composer, expand-to-editor, stop streaming, editable and copyable messages, regenerate, and a subtle jump-to-latest.",
-          "Tap + in the chat to pull in any saved prompt, tool or flow as context.",
-        ],
-      },
-      {
-        title: "Flows & chats",
-        items: [
-          "Run a flow directly in the AI, with every step handed over in order.",
-          "New Chats tab in each project so you can see where a prompt or flow was used.",
-          "Open any prompt straight in ChatGPT, Claude or Gemini from the editor.",
-        ],
-      },
-      {
-        title: "Fixes",
-        items: [
-          "Theme now applies on every page and survives a refresh, including system mode.",
-          "Project tabs no longer overflow their pill on small phones.",
-          "Chat drafts and in-progress answers survive an accidental refresh.",
-          "Undo and redo moved into the scrollable editor toolbar so the top bar stays stable.",
-        ],
-      },
-    ],
-  },
-  {
     version: "1.0",
     date: "July 2026",
+    current: true,
     sections: [
-
       {
         title: "Design",
         items: [
@@ -97,7 +29,7 @@ const RELEASES: Release[] = [
       {
         title: "Editor",
         items: [
-          "Rebuilt prompt editor with separate title and content fields - no more merged, glitchy title.",
+          "Rebuilt prompt editor with separate title and content fields — no more merged, glitchy title.",
           "Markdown format with live preview that matches exported output.",
           "Markdown formatting toolbar: bold, italic, links, code, headings, lists, checklists and quotes.",
           "Autosave with a configurable frequency, plus manual save-now from the editor.",
@@ -118,7 +50,7 @@ const RELEASES: Release[] = [
         items: [
           "Proper service worker with precaching for genuine offline use.",
           "Install-as-app prompt with platform-specific instructions, including iOS.",
-          "localStorage-only persistence for stability - no database to break offline.",
+          "localStorage-only persistence for stability — no database to break offline.",
         ],
       },
       {

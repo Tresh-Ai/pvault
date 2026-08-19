@@ -12,10 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, FileText, Wrench, GitBranch, MoreVertical, Pencil, Trash2, MessageSquare, Sparkle } from "lucide-react";
+import { ArrowLeft, Plus, FileText, Wrench, GitBranch, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Workflow, workflowHelpers } from "@/lib/workflows";
-import { Chat, chatHelpers } from "@/lib/chats";
 import { WorkflowCard } from "@/components/workflow-card";
 import { useToast } from "@/hooks/use-toast";
 import { PromptCreationModal } from "@/components/PromptCreationModal";
@@ -32,7 +31,6 @@ export default function ProjectView() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [tools, setTools] = useState<Tool[]>([]);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
-  const [chats, setChats] = useState<Chat[]>([]);
   const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
   const [projectForm, setProjectForm] = useState({ name: "", description: "", tags: "" });
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,12 +60,11 @@ export default function ProjectView() {
     if (!projectId) return;
     
     try {
-      const [allProjects, projectPrompts, projectTools, projectWorkflows, projectChats] = await Promise.all([
+      const [allProjects, projectPrompts, projectTools, projectWorkflows] = await Promise.all([
         dbHelpers.getAllProjects(),
         dbHelpers.getProjectPrompts(projectId),
         dbHelpers.getProjectTools(projectId),
         workflowHelpers.getProjectWorkflows(projectId),
-        chatHelpers.getProjectChats(projectId),
       ]);
       
       const currentProject = allProjects.find(p => p.id === projectId);
@@ -80,7 +77,6 @@ export default function ProjectView() {
       setPrompts(projectPrompts);
       setTools(projectTools);
       setWorkflows(projectWorkflows);
-      setChats(projectChats);
       setProjectForm({
         name: currentProject.name,
         description: currentProject.description || "",
@@ -219,7 +215,6 @@ export default function ProjectView() {
     if (!confirm("Delete this project and everything inside it?")) return;
     await dbHelpers.deleteProject(projectId);
     await workflowHelpers.deleteProjectWorkflows(projectId);
-    await chatHelpers.deleteProjectChats(projectId);
     navigate('/');
   };
 
@@ -227,17 +222,6 @@ export default function ProjectView() {
     if (!projectId) return;
     const wf = await workflowHelpers.createWorkflow({ projectId, name: "New workflow" });
     navigate(`/project/${projectId}/workflow/${wf.id}`);
-  };
-
-  const handleNewChat = () => {
-    if (!projectId) return;
-    navigate(`/project/${projectId}/chat/new`);
-  };
-
-  const handleDeleteChat = async (id: string) => {
-    await chatHelpers.deleteChat(id);
-    setChats(prev => prev.filter(c => c.id !== id));
-    toast({ title: "Chat deleted" });
   };
 
   const handleDeleteWorkflow = async (id: string) => {
@@ -366,7 +350,7 @@ export default function ProjectView() {
                 placeholder={`Search ${activeTab}...`}
                 className="flex-1 min-w-0"
               />
-              {(activeTab === "prompts" || activeTab === "tools") && <FilterDropdown
+              {activeTab !== "workflows" && <FilterDropdown
                 title={`Filter ${activeTab}`}
                 options={activeTab === "prompts" ? getPromptFilterOptions() : getToolFilterOptions()}
                 selectedFilters={selectedFilters}
@@ -375,29 +359,44 @@ export default function ProjectView() {
             </div>
 
             {/* Segmented tabs */}
-            <div className="flex bg-secondary rounded-full p-1 w-full gap-0.5">
-              {([
-                { key: "prompts", label: "Prompts", icon: FileText, count: prompts.length },
-                { key: "tools", label: "Tools", icon: Wrench, count: tools.length },
-                { key: "workflows", label: "Flows", icon: GitBranch, count: workflows.length },
-                { key: "chats", label: "Chats", icon: MessageSquare, count: chats.length },
-              ] as const).map(({ key, label, icon: Icon, count }) => (
-                <button
-                  key={key}
-                  onClick={() => { setActiveTab(key); setSelectedFilters([]); }}
-                  className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 sm:px-3 py-1.5 rounded-full text-[13px] sm:text-sm font-medium transition-all ${
-                    activeTab === key
-                      ? "bg-background text-foreground shadow-card"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{label}</span>
-                  <span className="text-[11px] opacity-60 shrink-0 hidden sm:inline">{count}</span>
-                </button>
-              ))}
+            <div className="flex bg-secondary rounded-full p-1 w-full">
+              <button
+                onClick={() => { setActiveTab("prompts"); setSelectedFilters([]); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  activeTab === "prompts"
+                    ? "bg-background text-foreground shadow-card"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Prompts
+                <span className="text-xs opacity-60">{prompts.length}</span>
+              </button>
+              <button
+                onClick={() => { setActiveTab("tools"); setSelectedFilters([]); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  activeTab === "tools"
+                    ? "bg-background text-foreground shadow-card"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <Wrench className="h-3.5 w-3.5" />
+                Tools
+                <span className="text-xs opacity-60">{tools.length}</span>
+              </button>
+              <button
+                onClick={() => { setActiveTab("workflows"); setSelectedFilters([]); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  activeTab === "workflows"
+                    ? "bg-background text-foreground shadow-card"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <GitBranch className="h-3.5 w-3.5" />
+                Flows
+                <span className="text-xs opacity-60">{workflows.length}</span>
+              </button>
             </div>
-
           </div>
         </div>
       </div>
@@ -408,63 +407,7 @@ export default function ProjectView() {
           <p className="text-sm text-muted-foreground mb-4">{project.description}</p>
         )}
 
-        {activeTab === "chats" ? (
-          chats.length === 0 ? (
-            <div className="text-center py-20 max-w-sm mx-auto">
-              <div className="w-14 h-14 mx-auto bg-secondary border border-border rounded-2xl flex items-center justify-center mb-5">
-                <Sparkle className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">No chats yet</h3>
-              <p className="text-sm text-muted-foreground mb-5">
-                Run your saved prompts, flows and tools with PVault AI. Every chat stays in this project.
-              </p>
-              <Button onClick={handleNewChat} className="rounded-full">
-                <Plus className="h-4 w-4 mr-1.5" /> New chat
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {chats
-                .filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
-                .map((chat) => (
-                  <div
-                    key={chat.id}
-                    className="rounded-2xl border border-border bg-card p-4 flex items-start gap-3"
-                  >
-                    <button
-                      onClick={() => navigate(`/project/${projectId}/chat/${chat.id}`)}
-                      className="min-w-0 flex-1 text-left"
-                    >
-                      <p className="text-sm font-medium truncate">{chat.title || "New chat"}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {chat.messages.length} message{chat.messages.length === 1 ? "" : "s"}
-                        {" · "}
-                        {new Date(chat.updatedAt).toLocaleDateString()}
-                      </p>
-                    </button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          aria-label="Chat menu"
-                          className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate(`/project/${projectId}/chat/${chat.id}`)}>
-                          <Pencil className="h-4 w-4 mr-2" /> Open chat
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteChat(chat.id)} className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" /> Delete chat
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ))}
-            </div>
-          )
-        ) : activeTab === "workflows" ? (
+        {activeTab === "workflows" ? (
           workflows.length === 0 ? (
             <div className="text-center py-20 max-w-sm mx-auto">
               <div className="w-14 h-14 mx-auto bg-secondary border border-border rounded-2xl flex items-center justify-center mb-5">
@@ -546,9 +489,7 @@ export default function ProjectView() {
             ? setIsCreatePromptOpen(true)
             : activeTab === "tools"
               ? setIsCreateToolOpen(true)
-              : activeTab === "chats"
-                ? handleNewChat()
-                : handleCreateWorkflow()
+              : handleCreateWorkflow()
         }
       />
 

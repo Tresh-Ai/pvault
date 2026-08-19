@@ -51,11 +51,6 @@ export const workflowHelpers = {
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   },
 
-  async getAllWorkflows(): Promise<Workflow[]> {
-    return read().sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  },
-
-
   async getWorkflow(id: string): Promise<Workflow | undefined> {
     return read().find((w) => w.id === id);
   },

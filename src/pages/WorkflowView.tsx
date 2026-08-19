@@ -29,7 +29,6 @@ import {
   ChevronDown,
   Play,
   Pencil,
-  Sparkle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -161,15 +160,6 @@ export default function WorkflowView() {
           <h1 className="text-base font-semibold tracking-tight truncate flex-1">
             {workflow.name}
           </h1>
-          <button
-            onClick={() => navigate(`/project/${projectId}/chat/new?flow=${workflowId}`)}
-            aria-label="Run this flow in PVault AI"
-            title="Run in PVault AI"
-            className="shrink-0 inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium mr-1"
-          >
-            <Sparkle className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Run in AI</span>
-          </button>
           <div className="flex bg-secondary rounded-full p-0.5 shrink-0">
             <button
               onClick={() => setMode("run")}
