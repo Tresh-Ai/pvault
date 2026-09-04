@@ -1,18 +1,27 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
-import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2, Undo2, Redo2 } from "lucide-react";
+import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink, Braces } from "lucide-react";
 import { MarkdownToolbar } from "@/components/markdown-toolbar";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { useEditorHistory } from "@/hooks/use-editor-history";
 import { useToast } from "@/hooks/use-toast";
+import { extractVariables, fillVariables, humanizeVariable } from "@/lib/variables";
 import { cn } from "@/lib/utils";
 
 const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
 type Format = 'text' | 'json' | 'markdown';
+
+/** External AI tools we can hand a prompt to. `q` targets accept the text in the URL. */
+const EXTERNAL_AI: { name: string; url: (text: string) => string; copy?: boolean }[] = [
+  { name: "ChatGPT", url: (t) => `https://chatgpt.com/?q=${encodeURIComponent(t)}` },
+  { name: "Claude", url: (t) => `https://claude.ai/new?q=${encodeURIComponent(t)}` },
+  { name: "Gemini", url: () => "https://gemini.google.com/app", copy: true },
+];
+
 
 export function PromptEditor() {
   const navigate = useNavigate();
@@ -36,6 +45,7 @@ export function PromptEditor() {
   const [isPreview, setIsPreview] = useState(false);
   const [isVersionsOpen, setIsVersionsOpen] = useState(false);
   const [versions, setVersions] = useState<PromptVersion[]>([]);
+  const [varValues, setVarValues] = useState<Record<string, string>>({});
 
   const [autosaveInterval, setAutosaveInterval] = useState(1200);
 
@@ -128,7 +138,7 @@ export function PromptEditor() {
     return created.id;
   }, [projectId, promptId, title, content, category, format, tags, isFavorite]);
 
-  // Debounced autosave — works for brand new prompts too
+  // Debounced autosave - works for brand new prompts too
   useEffect(() => {
     if (!isDirty.current) return;
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
@@ -218,6 +228,38 @@ export function PromptEditor() {
     }
   };
 
+  /** Save, then hand the prompt to the built-in AI chat. */
+  const runInPVaultAI = async () => {
+    if (!projectId || !content.trim()) return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    try {
+      const id = await persist(false);
+      if (id) await dbHelpers.incrementPromptUsage(id);
+      const vars = Object.keys(filledValues).length
+        ? `&vars=${encodeURIComponent(JSON.stringify(filledValues))}`
+        : "";
+      navigate(`/project/${projectId}/chat/new${id ? `?prompt=${id}${vars}` : ""}`);
+    } catch {
+      toast({ title: "Could not open the AI chat", variant: "destructive" });
+    }
+  };
+
+  /** Hand the prompt to an external AI tool in a new tab. */
+  const openExternal = async (target: typeof EXTERNAL_AI[number]) => {
+    const text = resolvedContent.trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      /* clipboard may be blocked - the URL still carries the prompt */
+    }
+    if (promptId) dbHelpers.incrementPromptUsage(promptId).catch(() => {});
+    window.open(target.url(text), "_blank", "noopener,noreferrer");
+    if (target.copy) toast({ title: `Copied - paste it into ${target.name}` });
+  };
+
+
+
   const handleViewVersions = async () => {
     if (!promptId) return;
     try {
@@ -245,6 +287,16 @@ export function PromptEditor() {
   const canSave = title.trim() && content.trim();
   const isMono = format === 'json';
 
+  // {{variables}} found in the prompt, plus the version with values filled in
+  const variables = useMemo(() => extractVariables(content), [content]);
+  const filledValues = useMemo(
+    () => Object.fromEntries(Object.entries(varValues).filter(([, v]) => v && v.trim())),
+    [varValues],
+  );
+  const resolvedContent = useMemo(() => fillVariables(content, filledValues), [content, filledValues]);
+  const unfilled = variables.filter((name) => !filledValues[name]);
+
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -260,30 +312,8 @@ export function PromptEditor() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
 
-          <div className="flex items-center gap-0.5 shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={undo}
-              disabled={!canUndo}
-              className="h-8 px-2"
-              aria-label="Undo"
-              title="Undo (Ctrl/Cmd + Z)"
-            >
-              <Undo2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={redo}
-              disabled={!canRedo}
-              className="h-8 px-2"
-              aria-label="Redo"
-              title="Redo (Ctrl/Cmd + Shift + Z)"
-            >
-              <Redo2 className="h-4 w-4" />
-            </Button>
-          </div>
+
+
 
 
           <div className="flex-1 flex justify-center text-xs text-muted-foreground">
@@ -393,21 +423,79 @@ export function PromptEditor() {
           )}
         </div>
 
-        {format === 'markdown' && !isPreview && (
+        {/* Variables: fill them in once, then run */}
+        {variables.length > 0 && (
+          <div className="mb-4 rounded-lg border border-border bg-card p-3">
+            <div className="mb-2.5 flex items-center gap-2">
+              <Braces className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-medium">Variables</span>
+              <span className="text-xs text-muted-foreground">
+                {unfilled.length === 0 ? "all filled" : `${unfilled.length} to fill`}
+              </span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {variables.map((name) => (
+                <label key={name} className="block">
+                  <span className="mb-1 block text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {humanizeVariable(name)}
+                  </span>
+                  <input
+                    value={varValues[name] || ""}
+                    onChange={(e) => setVarValues((v) => ({ ...v, [name]: e.target.value }))}
+                    placeholder={`{{${name}}}`}
+                    className="w-full rounded-md bg-secondary px-2.5 py-1.5 text-sm placeholder:text-muted-foreground/60"
+                  />
+                </label>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Values are used when you run the prompt. The saved prompt keeps its {"{{placeholders}}"}.
+            </p>
+          </div>
+        )}
+
+        {/* Run this prompt */}
+        <div className="mb-4 -mx-4 px-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={runInPVaultAI}
+            disabled={!content.trim()}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium disabled:opacity-40"
+          >
+            <Sparkle className="h-3.5 w-3.5" /> Run in PVault AI
+          </button>
+          {EXTERNAL_AI.map((target) => (
+            <button
+              key={target.name}
+              type="button"
+              onClick={() => openExternal(target)}
+              disabled={!content.trim()}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-40"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> {target.name}
+            </button>
+          ))}
+        </div>
+
+        {!isPreview && (
           <MarkdownToolbar
             textareaRef={contentRef}
             value={content}
             onChange={(next) => { markDirty(); setContent(next); }}
+            showFormatting={format === 'markdown'}
+            history={{ undo, redo, canUndo, canRedo }}
             className="mb-4"
           />
         )}
+
 
         <div className="h-px bg-border mb-5" />
 
         {/* Content / Preview */}
         {isPreview && format === 'markdown' ? (
-          <MarkdownPreview content={content} className="min-h-[60vh]" />
+          <MarkdownPreview content={resolvedContent} className="min-h-[60vh]" />
         ) : (
+
           <textarea
             ref={contentRef}
             value={content}

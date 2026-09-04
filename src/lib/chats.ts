@@ -18,11 +18,11 @@ export interface ChatMessage {
 
 export interface Chat {
   id: string;
-  projectId: string;
+  projectId: string | null;
   title: string;
   model?: string;
   messages: ChatMessage[];
-  /** Flat index of every prompt/flow/tool ever used in this chat — powers "where did I use this?" */
+  /** Flat index of every prompt/flow/tool ever used in this chat - powers "where did I use this?" */
   usedPromptIds: string[];
   usedWorkflowIds: string[];
   usedToolIds: string[];
@@ -71,7 +71,7 @@ export const chatHelpers = {
     return read().find((c) => c.id === id);
   },
 
-  async createChat(projectId: string, title = "New chat", attachments: ChatAttachment[] = []): Promise<Chat> {
+  async createChat(projectId: string | null, title = "New chat", attachments: ChatAttachment[] = []): Promise<Chat> {
     const now = new Date();
     const chat: Chat = {
       id: uuidv4(),
