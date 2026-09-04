@@ -79,13 +79,16 @@ export function AppShell() {
       </aside>
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="w-[86vw] max-w-[320px] p-0 border-border">
+        <SheetContent
+          side="left"
+          className="w-[86vw] max-w-[320px] p-0 border-border [&>button:last-child]:hidden"
+        >
           <AppSidebar onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
 
       <div className="flex-1 min-w-0 flex flex-col border-l border-border md:border-l-0">
-        <div className="md:hidden shrink-0 h-11 flex items-center gap-2 px-2 border-b border-border bg-background/85 backdrop-blur-md">
+        <div className="md:hidden shrink-0 h-11 flex items-center px-2">
           <button
             onClick={() => setOpen(true)}
             aria-label="Open menu"
@@ -93,10 +96,6 @@ export function AppShell() {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <button onClick={() => navigate("/welcome")} aria-label="PVault" className="flex-1 flex justify-center">
-            <Logo withWordmark />
-          </button>
-          <span className="h-9 w-9" aria-hidden />
         </div>
 
         <main className="flex-1 min-h-0 overflow-y-auto">
@@ -104,15 +103,29 @@ export function AppShell() {
         </main>
       </div>
 
-      {!onChatRoute && (
-        <button
-          onClick={() => navigate("/")}
-          aria-label="New chat"
-          title="New chat"
-          className="md:hidden fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-foreground text-background shadow-elevated flex items-center justify-center active:scale-95 transition-transform"
-        >
-          <Plus className="h-6 w-6" strokeWidth={2.5} />
-        </button>
+      {quickKind ? (
+        <>
+          <button
+            onClick={() => setQuickOpen(true)}
+            aria-label={`Create ${quickKind}`}
+            title={`Create ${quickKind}`}
+            className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-foreground text-background shadow-elevated flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <Plus className="h-6 w-6" strokeWidth={2.5} />
+          </button>
+          <QuickCreate kind={quickKind} open={quickOpen} onOpenChange={setQuickOpen} />
+        </>
+      ) : (
+        !onChatRoute && (
+          <button
+            onClick={() => navigate("/")}
+            aria-label="New chat"
+            title="New chat"
+            className="md:hidden fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-foreground text-background shadow-elevated flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <Plus className="h-6 w-6" strokeWidth={2.5} />
+          </button>
+        )
       )}
 
       <UpdateDialog />
