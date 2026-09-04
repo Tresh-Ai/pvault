@@ -215,9 +215,6 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
           }
         }}
       >
-        <DialogTrigger asChild>
-          <FloatingActionButton onClick={() => setIsCreateDialogOpen(true)} data-tour="fab" />
-        </DialogTrigger>
         <DialogContent className="w-[90vw] max-w-lg rounded-lg">
           <DialogHeader>
             <DialogTitle>{editingProject ? "Edit Project" : "Create New Project"}</DialogTitle>
