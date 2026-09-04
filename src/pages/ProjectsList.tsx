@@ -2,20 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Project, dbHelpers } from "@/lib/database";
 import { ProjectCard } from "@/components/project-card";
-import { SearchInput } from "@/components/ui/search-input";
-import { FilterDropdown } from "@/components/ui/filter-dropdown";
-import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Settings, Plus, Command, BarChart3 } from "lucide-react";
+import { Folder, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Logo } from "@/components/logo";
 import { Newsletter } from "@/components/newsletter";
 import { InstallPrompt } from "@/components/install-prompt";
-import { openCommandPalette } from "@/components/command-palette";
 import { workflowHelpers } from "@/lib/workflows";
 
 interface ProjectsList {
