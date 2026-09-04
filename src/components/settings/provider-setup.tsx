@@ -37,6 +37,7 @@ export function ProviderSetup() {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [freeOnly, setFreeOnly] = useState(false);
+  const [changing, setChanging] = useState(false);
 
   const meta = providerMeta(settings.provider);
   const connected = !!settings.apiKey;
@@ -99,6 +100,7 @@ export function ProviderSetup() {
 
   const pickModel = (model: ModelInfo) => {
     setSettings(saveAISettings({ model: model.id, modelName: model.name }));
+    setChanging(false);
     toast({ title: "Model selected", description: model.name });
   };
 
@@ -240,17 +242,35 @@ export function ProviderSetup() {
         </div>
       )}
 
-      {step === "model" && (
+      {step === "model" && settings.model && !changing && (
         <div>
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-base font-semibold">Pick a model</h3>
-            {settings.modelName && (
-              <span className="text-xs text-muted-foreground truncate max-w-[50%]">{settings.modelName}</span>
-            )}
+          <h3 className="text-base font-semibold mb-3">Your model</h3>
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-primary bg-primary/5 px-3.5 py-3">
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-medium">{settings.modelName || settings.model}</span>
+              <span className="block truncate text-[11px] text-muted-foreground">
+                {meta.label} · {settings.model}
+              </span>
+            </span>
+            <Check className="h-4 w-4 shrink-0 text-primary" />
           </div>
+          <Button
+            variant="outline"
+            className="mt-3 w-full rounded-full"
+            onClick={() => setChanging(true)}
+          >
+            Change model
+          </Button>
+        </div>
+      )}
+
+      {step === "model" && (!settings.model || changing) && (
+        <div>
+          <h3 className="text-base font-semibold">Pick a model</h3>
           <p className="text-sm text-muted-foreground mt-0.5 mb-3">
             Best picks for planning work sit at the top. Switch to free models any time.
           </p>
+
 
           <div className="flex gap-2 mb-2">
             <div className="relative flex-1 min-w-0">
