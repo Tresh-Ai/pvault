@@ -5,7 +5,6 @@ import {
   Folder,
   GitBranch,
   MessageSquare,
-  Plus,
   Search,
   Settings,
   Trash2,
@@ -52,20 +51,13 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
   return (
     <div className="flex h-full w-full flex-col bg-secondary/40">
-      {/* Brand + new chat */}
-      <div className="flex items-center justify-between gap-2 px-3 h-14 shrink-0">
+      {/* Brand */}
+      <div className="flex items-center gap-2 px-3 h-14 shrink-0">
         <button onClick={() => go("/")} className="min-w-0" aria-label="PVault home">
           <Logo withWordmark />
         </button>
-        <button
-          onClick={() => go("/")}
-          aria-label="New chat"
-          title="New chat"
-          className="h-8 w-8 shrink-0 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
       </div>
+
 
       <div className="px-2 space-y-1 shrink-0">
         <button

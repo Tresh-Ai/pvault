@@ -9,7 +9,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { searchEverything, type SearchResult, type SearchKind } from "@/lib/search";
-import { FileText, Folder, GitBranch, MessageSquare, Wrench, BarChart3, Settings, Sparkle } from "lucide-react";
+import { FileText, Folder, GitBranch, MessageSquare, Wrench, Settings } from "lucide-react";
 
 const KIND_META: Record<SearchKind, { icon: typeof FileText; label: string }> = {
   project: { icon: Folder, label: "Projects" },
@@ -107,19 +107,20 @@ export function CommandPalette() {
           </>
         ) : (
           <CommandGroup heading="Jump to">
-            <CommandItem value="workspace" onSelect={() => go("/")} className="gap-2">
-              <Folder className="h-4 w-4 text-muted-foreground" /> Workspace
+            <CommandItem value="new chat" onSelect={() => go("/")} className="gap-2">
+              <MessageSquare className="h-4 w-4 text-muted-foreground" /> New chat
             </CommandItem>
-            <CommandItem value="insights" onSelect={() => go("/insights")} className="gap-2">
-              <BarChart3 className="h-4 w-4 text-muted-foreground" /> Insights
+            <CommandItem value="projects" onSelect={() => go("/library/projects")} className="gap-2">
+              <Folder className="h-4 w-4 text-muted-foreground" /> Projects
             </CommandItem>
-            <CommandItem value="pvault ai" onSelect={() => go("/ai")} className="gap-2">
-              <Sparkle className="h-4 w-4 text-muted-foreground" /> PVault AI setup
+            <CommandItem value="prompts" onSelect={() => go("/library/prompts")} className="gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" /> Prompts
             </CommandItem>
             <CommandItem value="settings" onSelect={() => go("/settings")} className="gap-2">
               <Settings className="h-4 w-4 text-muted-foreground" /> Settings
             </CommandItem>
           </CommandGroup>
+
         )}
       </CommandList>
     </CommandDialog>

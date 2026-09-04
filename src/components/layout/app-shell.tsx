@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Menu, Plus } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { Logo } from "@/components/logo";
 import { UpdateDialog } from "@/components/update-dialog";
+import { QuickCreate, type QuickKind } from "@/components/quick-create";
 
 const WIDTH_KEY = "pvault_sidebar_width";
 const MIN = 220;
@@ -13,6 +13,7 @@ const MAX = 420;
 /** Chat-first shell: resizable sidebar on desktop, slide-over on mobile. */
 export function AppShell() {
   const [open, setOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
   const [width, setWidth] = useState(() => {
     const saved = Number(localStorage.getItem(WIDTH_KEY));
     return saved >= MIN && saved <= MAX ? saved : 268;
@@ -22,6 +23,15 @@ export function AppShell() {
   const navigate = useNavigate();
 
   useEffect(() => setOpen(false), [location.pathname]);
+
+  const quickKind = useMemo<QuickKind | null>(() => {
+    const path = location.pathname;
+    if (path.startsWith("/library/projects")) return "project";
+    if (path.startsWith("/library/prompts")) return "prompt";
+    if (path.startsWith("/library/tools")) return "tool";
+    if (path.startsWith("/library/flows")) return "flow";
+    return null;
+  }, [location.pathname]);
 
   const onDrag = useCallback((e: PointerEvent) => {
     if (!dragging.current) return;
@@ -79,13 +89,16 @@ export function AppShell() {
       </aside>
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="w-[86vw] max-w-[320px] p-0 border-border">
+        <SheetContent
+          side="left"
+          className="w-[86vw] max-w-[320px] p-0 border-border [&>button:last-child]:hidden"
+        >
           <AppSidebar onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
 
       <div className="flex-1 min-w-0 flex flex-col border-l border-border md:border-l-0">
-        <div className="md:hidden shrink-0 h-11 flex items-center gap-2 px-2 border-b border-border bg-background/85 backdrop-blur-md">
+        <div className="md:hidden shrink-0 h-11 flex items-center px-2">
           <button
             onClick={() => setOpen(true)}
             aria-label="Open menu"
@@ -93,10 +106,6 @@ export function AppShell() {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <button onClick={() => navigate("/welcome")} aria-label="PVault" className="flex-1 flex justify-center">
-            <Logo withWordmark />
-          </button>
-          <span className="h-9 w-9" aria-hidden />
         </div>
 
         <main className="flex-1 min-h-0 overflow-y-auto">
@@ -104,15 +113,29 @@ export function AppShell() {
         </main>
       </div>
 
-      {!onChatRoute && (
-        <button
-          onClick={() => navigate("/")}
-          aria-label="New chat"
-          title="New chat"
-          className="md:hidden fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-foreground text-background shadow-elevated flex items-center justify-center active:scale-95 transition-transform"
-        >
-          <Plus className="h-6 w-6" strokeWidth={2.5} />
-        </button>
+      {quickKind ? (
+        <>
+          <button
+            onClick={() => setQuickOpen(true)}
+            aria-label={`Create ${quickKind}`}
+            title={`Create ${quickKind}`}
+            className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-foreground text-background shadow-elevated flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <Plus className="h-6 w-6" strokeWidth={2.5} />
+          </button>
+          <QuickCreate kind={quickKind} open={quickOpen} onOpenChange={setQuickOpen} />
+        </>
+      ) : (
+        !onChatRoute && (
+          <button
+            onClick={() => navigate("/")}
+            aria-label="New chat"
+            title="New chat"
+            className="md:hidden fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-foreground text-background shadow-elevated flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <Plus className="h-6 w-6" strokeWidth={2.5} />
+          </button>
+        )
       )}
 
       <UpdateDialog />

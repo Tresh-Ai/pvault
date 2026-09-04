@@ -2,20 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Project, dbHelpers } from "@/lib/database";
 import { ProjectCard } from "@/components/project-card";
-import { SearchInput } from "@/components/ui/search-input";
-import { FilterDropdown } from "@/components/ui/filter-dropdown";
-import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Settings, Plus, Command, BarChart3 } from "lucide-react";
+import { Folder, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Logo } from "@/components/logo";
 import { Newsletter } from "@/components/newsletter";
 import { InstallPrompt } from "@/components/install-prompt";
-import { openCommandPalette } from "@/components/command-palette";
 import { workflowHelpers } from "@/lib/workflows";
 
 interface ProjectsList {
@@ -165,74 +160,15 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="h-12 flex items-center justify-between">
-            <Logo withWordmark />
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={openCommandPalette}
-                className="h-8 gap-1.5 px-2 text-muted-foreground"
-                aria-label="Search everything"
-                title="Search everything (Ctrl/Cmd + K)"
-              >
-                <Command className="h-4 w-4" />
-                <span className="hidden sm:inline text-xs">Search all</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/insights')}
-                className="h-8 w-8 p-0"
-                aria-label="Insights"
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => (onSettingsClick ? onSettingsClick() : navigate("/settings"))}
-                data-tour="settings"
-                className="h-8 w-8 p-0"
-                aria-label="Settings"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="pb-3 flex gap-2 items-center">
-            <SearchInput
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search projects..."
-              className="flex-1 min-w-0"
-              data-tour="search"
-            />
-            <FilterDropdown
-              title="Filter projects"
-              options={[
-                { id: 'recent', label: 'Recently Updated', count: projects.filter(p => p.updatedAt && new Date(p.updatedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000).length },
-                { id: 'old', label: 'Older Projects', count: projects.filter(p => !p.updatedAt || new Date(p.updatedAt).getTime() <= Date.now() - 7 * 24 * 60 * 60 * 1000).length }
-              ].filter(option => option.count > 0)}
-              selectedFilters={[]}
-              onFiltersChange={() => {}}
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 py-5 pb-28">
-        <div className="flex items-baseline justify-between mb-4">
-          <h1 data-tour="projects-heading" className="text-2xl font-semibold tracking-tight">Workspace</h1>
-          <span className="text-xs text-muted-foreground">
-            {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+      <div className="max-w-3xl mx-auto px-4 py-5 pb-28">
+        <div className="flex items-center justify-between mb-3">
+          <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Folder className="h-4 w-4" /> Projects
           </span>
+          <span className="text-xs text-muted-foreground">{projects.length}</span>
         </div>
+
 
         {filteredProjects.length === 0 ? (
           <div className="text-center py-16 max-w-sm mx-auto">
@@ -279,9 +215,6 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
           }
         }}
       >
-        <DialogTrigger asChild>
-          <FloatingActionButton onClick={() => setIsCreateDialogOpen(true)} data-tour="fab" />
-        </DialogTrigger>
         <DialogContent className="w-[90vw] max-w-lg rounded-lg">
           <DialogHeader>
             <DialogTitle>{editingProject ? "Edit Project" : "Create New Project"}</DialogTitle>
