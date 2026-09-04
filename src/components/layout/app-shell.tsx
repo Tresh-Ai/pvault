@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Menu, Plus } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { Logo } from "@/components/logo";
 import { UpdateDialog } from "@/components/update-dialog";
+import { QuickCreate, type QuickKind } from "@/components/quick-create";
 
 const WIDTH_KEY = "pvault_sidebar_width";
 const MIN = 220;
@@ -13,6 +13,7 @@ const MAX = 420;
 /** Chat-first shell: resizable sidebar on desktop, slide-over on mobile. */
 export function AppShell() {
   const [open, setOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
   const [width, setWidth] = useState(() => {
     const saved = Number(localStorage.getItem(WIDTH_KEY));
     return saved >= MIN && saved <= MAX ? saved : 268;
@@ -22,6 +23,15 @@ export function AppShell() {
   const navigate = useNavigate();
 
   useEffect(() => setOpen(false), [location.pathname]);
+
+  const quickKind = useMemo<QuickKind | null>(() => {
+    const path = location.pathname;
+    if (path.startsWith("/library/projects")) return "project";
+    if (path.startsWith("/library/prompts")) return "prompt";
+    if (path.startsWith("/library/tools")) return "tool";
+    if (path.startsWith("/library/flows")) return "flow";
+    return null;
+  }, [location.pathname]);
 
   const onDrag = useCallback((e: PointerEvent) => {
     if (!dragging.current) return;
