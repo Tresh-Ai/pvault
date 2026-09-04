@@ -5,7 +5,6 @@ import {
   Folder,
   GitBranch,
   MessageSquare,
-  Plus,
   Search,
   Settings,
   Trash2,

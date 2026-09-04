@@ -75,6 +75,7 @@ export function QuickCreate({ kind, open, onOpenChange }: QuickCreateProps) {
           content: "",
           tags: [],
           category: "Other",
+          format: "text",
           isFavorite: false,
         });
         onOpenChange(false);
