@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
-import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink, Braces } from "lucide-react";
+import { ArrowLeft, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink, Braces } from "lucide-react";
+import { VariablesDialog } from "@/components/variables-dialog";
 import { MarkdownToolbar } from "@/components/markdown-toolbar";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { useEditorHistory } from "@/hooks/use-editor-history";
@@ -46,6 +47,7 @@ export function PromptEditor() {
   const [isVersionsOpen, setIsVersionsOpen] = useState(false);
   const [versions, setVersions] = useState<PromptVersion[]>([]);
   const [varValues, setVarValues] = useState<Record<string, string>>({});
+  const [isVarsOpen, setIsVarsOpen] = useState(false);
 
   const [autosaveInterval, setAutosaveInterval] = useState(1200);
 
@@ -229,20 +231,30 @@ export function PromptEditor() {
   };
 
   /** Save, then hand the prompt to the built-in AI chat. */
-  const runInPVaultAI = async () => {
+  const runInPVaultAI = async (values: Record<string, string> = {}) => {
     if (!projectId || !content.trim()) return;
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     try {
       const id = await persist(false);
       if (id) await dbHelpers.incrementPromptUsage(id);
-      const vars = Object.keys(filledValues).length
-        ? `&vars=${encodeURIComponent(JSON.stringify(filledValues))}`
+      const vars = Object.keys(values).length
+        ? `&vars=${encodeURIComponent(JSON.stringify(values))}`
         : "";
       navigate(`/project/${projectId}/chat/new${id ? `?prompt=${id}${vars}` : ""}`);
     } catch {
       toast({ title: "Could not open the AI chat", variant: "destructive" });
     }
   };
+
+  /** Ask for variable values first when the prompt has any. */
+  const startRunInPVaultAI = () => {
+    if (variables.length > 0) {
+      setIsVarsOpen(true);
+      return;
+    }
+    void runInPVaultAI();
+  };
+
 
   /** Hand the prompt to an external AI tool in a new tab. */
   const openExternal = async (target: typeof EXTERNAL_AI[number]) => {
@@ -305,9 +317,9 @@ export function PromptEditor() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(`/project/${projectId}`)}
+            onClick={() => navigate(-1)}
             className="shrink-0 h-8 px-2"
-            aria-label="Back to project"
+            aria-label="Go back"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -351,17 +363,6 @@ export function PromptEditor() {
                 <History className="h-4 w-4" />
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSaveNow}
-              disabled={!title.trim() && !content.trim()}
-              className="h-8 px-2"
-              aria-label="Save now"
-              title="Save now (Ctrl/Cmd + S)"
-            >
-              <Save className="h-4 w-4" />
-            </Button>
             <Button
               onClick={handleSave}
               disabled={isLoading || !canSave}
@@ -423,42 +424,27 @@ export function PromptEditor() {
           )}
         </div>
 
-        {/* Variables: fill them in once, then run */}
+        {/* Variables: shown as chips, filled in a form right before a run */}
         {variables.length > 0 && (
-          <div className="mb-4 rounded-lg border border-border bg-card p-3">
-            <div className="mb-2.5 flex items-center gap-2">
-              <Braces className="h-3.5 w-3.5 text-primary" />
-              <span className="text-xs font-medium">Variables</span>
-              <span className="text-xs text-muted-foreground">
-                {unfilled.length === 0 ? "all filled" : `${unfilled.length} to fill`}
+          <div className="mb-4 -mx-5 px-5 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <Braces className="h-3.5 w-3.5 shrink-0 text-primary" />
+            {variables.map((name) => (
+              <span
+                key={name}
+                className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[11px] text-muted-foreground"
+              >
+                {humanizeVariable(name)}
               </span>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {variables.map((name) => (
-                <label key={name} className="block">
-                  <span className="mb-1 block text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {humanizeVariable(name)}
-                  </span>
-                  <input
-                    value={varValues[name] || ""}
-                    onChange={(e) => setVarValues((v) => ({ ...v, [name]: e.target.value }))}
-                    placeholder={`{{${name}}}`}
-                    className="w-full rounded-md bg-secondary px-2.5 py-1.5 text-sm placeholder:text-muted-foreground/60"
-                  />
-                </label>
-              ))}
-            </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              Values are used when you run the prompt. The saved prompt keeps its {"{{placeholders}}"}.
-            </p>
+            ))}
           </div>
         )}
+
 
         {/* Run this prompt */}
         <div className="mb-4 -mx-4 px-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           <button
             type="button"
-            onClick={runInPVaultAI}
+            onClick={startRunInPVaultAI}
             disabled={!content.trim()}
             className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium disabled:opacity-40"
           >
@@ -515,6 +501,17 @@ export function PromptEditor() {
           />
         )}
       </div>
+
+      <VariablesDialog
+        open={isVarsOpen}
+        onOpenChange={setIsVarsOpen}
+        names={variables}
+        confirmLabel="Run in PVault AI"
+        onConfirm={(values) => {
+          setVarValues(values);
+          void runInPVaultAI(values);
+        }}
+      />
 
       {/* Version History Modal */}
       <Dialog open={isVersionsOpen} onOpenChange={setIsVersionsOpen}>
