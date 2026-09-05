@@ -67,6 +67,8 @@ export function AppShell() {
 
   const onChatRoute = location.pathname === "/" || location.pathname.startsWith("/c/") ||
     location.pathname.includes("/chat/");
+  // Project pages own their floating button (new prompt, tool, flow or chat).
+  const onProjectRoute = location.pathname.startsWith("/project/");
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden bg-background">
@@ -126,7 +128,7 @@ export function AppShell() {
           <QuickCreate kind={quickKind} open={quickOpen} onOpenChange={setQuickOpen} />
         </>
       ) : (
-        !onChatRoute && (
+        !onChatRoute && !onProjectRoute && (
           <button
             onClick={() => navigate("/")}
             aria-label="New chat"

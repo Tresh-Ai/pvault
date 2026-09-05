@@ -351,7 +351,7 @@ export default function ChatView() {
       <div ref={scrollRef} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
           {empty && (
-            <div className="pt-14 text-center">
+            <div className="pt-6 text-center">
               <div className="w-11 h-11 mx-auto rounded-2xl bg-secondary border border-border flex items-center justify-center mb-4">
                 <Sparkle className="h-5 w-5 text-primary" />
               </div>
@@ -365,7 +365,7 @@ export default function ChatView() {
                 </Button>
               )}
               {ready && suggestions.length > 0 && (
-                <div className="mt-6 space-y-2 text-left">
+                <div className="mt-5 space-y-2 text-left">
                   {suggestions.map((p) => (
                     <button
                       key={p.id}

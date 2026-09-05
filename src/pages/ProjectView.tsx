@@ -331,8 +331,8 @@ export default function ProjectView() {
         <div className="max-w-2xl mx-auto px-4">
           <div className="h-12 flex items-center gap-2">
             <button
-              onClick={() => navigate('/')}
-              aria-label="All projects"
+              onClick={() => navigate(-1)}
+              aria-label="Go back"
               className="shrink-0 h-8 w-8 -ml-1 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />

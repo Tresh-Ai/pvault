@@ -5,6 +5,7 @@ import {
   Folder,
   GitBranch,
   MessageSquare,
+  Plus,
   Search,
   Settings,
   Trash2,
@@ -128,8 +129,15 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         )}
       </div>
 
-      {/* Settings + profile */}
-      <div className="shrink-0 border-t border-border p-2">
+      {/* New chat + settings */}
+      <div className="shrink-0 border-t border-border p-2 space-y-1">
+        <button
+          onClick={() => go("/")}
+          className="w-full h-9 rounded-lg px-2.5 flex items-center gap-2.5 text-sm text-foreground hover:bg-background/70 transition-colors"
+        >
+          <Plus className="h-4 w-4 shrink-0" />
+          <span className="truncate">New chat</span>
+        </button>
         <button
           onClick={() => go("/settings")}
           className="w-full rounded-lg px-2.5 py-2 flex items-center gap-2.5 text-sm text-muted-foreground hover:bg-background/70 transition-colors"
