@@ -34,6 +34,7 @@ export function QuickCreate({ kind, open, onOpenChange }: QuickCreateProps) {
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [url, setUrl] = useState("");
+  const [tags, setTags] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export function QuickCreate({ kind, open, onOpenChange }: QuickCreateProps) {
     setName("");
     setNotes("");
     setUrl("");
+    setTags("");
     dbHelpers.getAllProjects().then((list) => {
       setProjects(list);
       setProjectId((prev) => prev || list[0]?.id || "");
@@ -57,12 +59,13 @@ export function QuickCreate({ kind, open, onOpenChange }: QuickCreateProps) {
       return;
     }
     setBusy(true);
+    const tagList = tags.split(",").map((t) => t.trim()).filter(Boolean);
     try {
       if (kind === "project") {
         const project = await dbHelpers.createProject({
           name: name.trim(),
           description: notes.trim() || undefined,
-          tags: [],
+          tags: tagList,
         });
         onOpenChange(false);
         navigate(`/project/${project.id}`);
@@ -73,7 +76,7 @@ export function QuickCreate({ kind, open, onOpenChange }: QuickCreateProps) {
           projectId,
           title: name.trim(),
           content: "",
-          tags: [],
+          tags: tagList,
           category: "Other",
           format: "text",
           isFavorite: false,
@@ -89,7 +92,7 @@ export function QuickCreate({ kind, open, onOpenChange }: QuickCreateProps) {
           url: url.trim(),
           category: "Other",
           notes: notes.trim() || undefined,
-          tags: [],
+          tags: tagList,
         });
         onOpenChange(false);
         navigate(`/project/${projectId}?tab=tools`);
@@ -160,6 +163,16 @@ export function QuickCreate({ kind, open, onOpenChange }: QuickCreateProps) {
               <Input id="qc-url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" />
             </div>
           )}
+
+          <div>
+            <Label htmlFor="qc-tags">Tags (optional)</Label>
+            <Input
+              id="qc-tags"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="Comma separated"
+            />
+          </div>
 
           {kind !== "prompt" && (
             <div>
