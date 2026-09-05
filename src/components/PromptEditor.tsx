@@ -229,20 +229,30 @@ export function PromptEditor() {
   };
 
   /** Save, then hand the prompt to the built-in AI chat. */
-  const runInPVaultAI = async () => {
+  const runInPVaultAI = async (values: Record<string, string> = {}) => {
     if (!projectId || !content.trim()) return;
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     try {
       const id = await persist(false);
       if (id) await dbHelpers.incrementPromptUsage(id);
-      const vars = Object.keys(filledValues).length
-        ? `&vars=${encodeURIComponent(JSON.stringify(filledValues))}`
+      const vars = Object.keys(values).length
+        ? `&vars=${encodeURIComponent(JSON.stringify(values))}`
         : "";
       navigate(`/project/${projectId}/chat/new${id ? `?prompt=${id}${vars}` : ""}`);
     } catch {
       toast({ title: "Could not open the AI chat", variant: "destructive" });
     }
   };
+
+  /** Ask for variable values first when the prompt has any. */
+  const startRunInPVaultAI = () => {
+    if (variables.length > 0) {
+      setIsVarsOpen(true);
+      return;
+    }
+    void runInPVaultAI();
+  };
+
 
   /** Hand the prompt to an external AI tool in a new tab. */
   const openExternal = async (target: typeof EXTERNAL_AI[number]) => {
