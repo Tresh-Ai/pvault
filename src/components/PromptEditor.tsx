@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
-import { ArrowLeft, Save, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink, Braces } from "lucide-react";
+import { ArrowLeft, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink, Braces } from "lucide-react";
+import { VariablesDialog } from "@/components/variables-dialog";
 import { MarkdownToolbar } from "@/components/markdown-toolbar";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { useEditorHistory } from "@/hooks/use-editor-history";
@@ -46,6 +47,7 @@ export function PromptEditor() {
   const [isVersionsOpen, setIsVersionsOpen] = useState(false);
   const [versions, setVersions] = useState<PromptVersion[]>([]);
   const [varValues, setVarValues] = useState<Record<string, string>>({});
+  const [isVarsOpen, setIsVarsOpen] = useState(false);
 
   const [autosaveInterval, setAutosaveInterval] = useState(1200);
 
@@ -315,9 +317,9 @@ export function PromptEditor() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(`/project/${projectId}`)}
+            onClick={() => navigate(-1)}
             className="shrink-0 h-8 px-2"
-            aria-label="Back to project"
+            aria-label="Go back"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -361,17 +363,6 @@ export function PromptEditor() {
                 <History className="h-4 w-4" />
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSaveNow}
-              disabled={!title.trim() && !content.trim()}
-              className="h-8 px-2"
-              aria-label="Save now"
-              title="Save now (Ctrl/Cmd + S)"
-            >
-              <Save className="h-4 w-4" />
-            </Button>
             <Button
               onClick={handleSave}
               disabled={isLoading || !canSave}
@@ -453,7 +444,7 @@ export function PromptEditor() {
         <div className="mb-4 -mx-4 px-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           <button
             type="button"
-            onClick={runInPVaultAI}
+            onClick={startRunInPVaultAI}
             disabled={!content.trim()}
             className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium disabled:opacity-40"
           >
@@ -510,6 +501,17 @@ export function PromptEditor() {
           />
         )}
       </div>
+
+      <VariablesDialog
+        open={isVarsOpen}
+        onOpenChange={setIsVarsOpen}
+        names={variables}
+        confirmLabel="Run in PVault AI"
+        onConfirm={(values) => {
+          setVarValues(values);
+          void runInPVaultAI(values);
+        }}
+      />
 
       {/* Version History Modal */}
       <Dialog open={isVersionsOpen} onOpenChange={setIsVersionsOpen}>
