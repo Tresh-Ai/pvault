@@ -423,36 +423,21 @@ export function PromptEditor() {
           )}
         </div>
 
-        {/* Variables: fill them in once, then run */}
+        {/* Variables: shown as chips, filled in a form right before a run */}
         {variables.length > 0 && (
-          <div className="mb-4 rounded-lg border border-border bg-card p-3">
-            <div className="mb-2.5 flex items-center gap-2">
-              <Braces className="h-3.5 w-3.5 text-primary" />
-              <span className="text-xs font-medium">Variables</span>
-              <span className="text-xs text-muted-foreground">
-                {unfilled.length === 0 ? "all filled" : `${unfilled.length} to fill`}
+          <div className="mb-4 -mx-5 px-5 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <Braces className="h-3.5 w-3.5 shrink-0 text-primary" />
+            {variables.map((name) => (
+              <span
+                key={name}
+                className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[11px] text-muted-foreground"
+              >
+                {humanizeVariable(name)}
               </span>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {variables.map((name) => (
-                <label key={name} className="block">
-                  <span className="mb-1 block text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {humanizeVariable(name)}
-                  </span>
-                  <input
-                    value={varValues[name] || ""}
-                    onChange={(e) => setVarValues((v) => ({ ...v, [name]: e.target.value }))}
-                    placeholder={`{{${name}}}`}
-                    className="w-full rounded-md bg-secondary px-2.5 py-1.5 text-sm placeholder:text-muted-foreground/60"
-                  />
-                </label>
-              ))}
-            </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              Values are used when you run the prompt. The saved prompt keeps its {"{{placeholders}}"}.
-            </p>
+            ))}
           </div>
         )}
+
 
         {/* Run this prompt */}
         <div className="mb-4 -mx-4 px-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
