@@ -26,6 +26,8 @@ import { applyTheme as applyStoredTheme, type ThemeChoice } from "@/lib/theme";
 import { ProviderSetup } from "@/components/settings/provider-setup";
 import { useSession } from "@/hooks/use-session";
 import { supabase } from "@/integrations/supabase/client";
+import { InstallPrompt } from "@/components/install-prompt";
+import { Newsletter } from "@/components/newsletter";
 import {
   getProfile,
   isSyncEnabled,
