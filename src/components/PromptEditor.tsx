@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
-import { ArrowLeft, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink, Braces } from "lucide-react";
+import { ArrowLeft, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink, Braces, Wand2 } from "lucide-react";
 import { VariablesDialog } from "@/components/variables-dialog";
 import { MarkdownToolbar } from "@/components/markdown-toolbar";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { useEditorHistory } from "@/hooks/use-editor-history";
 import { useToast } from "@/hooks/use-toast";
 import { extractVariables, fillVariables, humanizeVariable } from "@/lib/variables";
+import { isAIReady } from "@/lib/ai";
+import { improvePrompt } from "@/lib/prompt-coach";
 import { cn } from "@/lib/utils";
 
 const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
@@ -48,6 +50,7 @@ export function PromptEditor() {
   const [versions, setVersions] = useState<PromptVersion[]>([]);
   const [varValues, setVarValues] = useState<Record<string, string>>({});
   const [isVarsOpen, setIsVarsOpen] = useState(false);
+  const [improving, setImproving] = useState(false);
 
   const [autosaveInterval, setAutosaveInterval] = useState(1200);
 
@@ -478,6 +481,15 @@ export function PromptEditor() {
             className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium disabled:opacity-40"
           >
             <Sparkle className="h-3.5 w-3.5" /> Run in PVault AI
+          </button>
+          <button
+            type="button"
+            onClick={handleImprove}
+            disabled={!content.trim() || improving}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-40"
+          >
+            {improving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+            {improving ? "Improving" : "Improve with AI"}
           </button>
           {EXTERNAL_AI.map((target) => (
             <button
