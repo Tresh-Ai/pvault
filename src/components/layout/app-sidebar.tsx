@@ -47,7 +47,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     e.stopPropagation();
     await chatHelpers.deleteChat(id);
     setChats((prev) => prev.filter((c) => c.id !== id));
-    if (location.pathname.includes(id)) navigate("/");
+    if (location.pathname.includes(id)) navigate("/chat");
   };
 
   return (
@@ -132,7 +132,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       {/* New chat + settings */}
       <div className="shrink-0 border-t border-border p-2 space-y-1">
         <button
-          onClick={() => go("/")}
+          onClick={() => go("/chat")}
           className="w-full h-9 rounded-lg px-2.5 flex items-center gap-2.5 text-sm text-foreground hover:bg-background/70 transition-colors"
         >
           <Plus className="h-4 w-4 shrink-0" />

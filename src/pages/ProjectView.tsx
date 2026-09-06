@@ -18,6 +18,7 @@ import { Workflow, workflowHelpers } from "@/lib/workflows";
 import { Chat, chatHelpers } from "@/lib/chats";
 import { WorkflowCard } from "@/components/workflow-card";
 import { useToast } from "@/hooks/use-toast";
+import { PageHint } from "@/components/page-hint";
 import { PromptCreationModal } from "@/components/PromptCreationModal";
 import { FilterDropdown } from "@/components/ui/filter-dropdown";
 
@@ -404,6 +405,11 @@ export default function ProjectView() {
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-5 pb-28">
+        <PageHint id="project">
+          Switch tabs to move between the prompts, tools, flows and chats in this project. The +
+          button creates whichever one you are looking at.
+        </PageHint>
+
         {project.description && (
           <p className="text-sm text-muted-foreground mb-4">{project.description}</p>
         )}

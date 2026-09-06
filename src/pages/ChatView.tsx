@@ -15,13 +15,10 @@ import { getAISettings, isAIReady, streamChat } from "@/lib/ai";
 import { extractVariables, fillVariables } from "@/lib/variables";
 import { syncInBackground } from "@/lib/cloud";
 import { buildWorkspaceContext } from "@/lib/workspace-context";
+import { PROMPT_COACH_KNOWLEDGE } from "@/lib/prompt-coach";
+import { PageHint } from "@/components/page-hint";
 
-const SYSTEM_PROMPT = [
-  "You are PVault AI, the planning partner inside the user's local AI workspace.",
-  "You help them decide what to work on, plan the steps, and get it done using what they already have saved: projects, prompts, tools and flows.",
-  "You can see an inventory of their workspace below. Reference their saved prompts, tools and flows by name when they are useful, and say plainly when something is missing and worth saving.",
-  "Be direct and practical. Prefer short plans with concrete next steps. Use markdown when it helps readability.",
-].join(" ");
+const SYSTEM_PROMPT = PROMPT_COACH_KNOWLEDGE;
 
 
 interface Draft {
@@ -350,6 +347,11 @@ export default function ChatView() {
     <div className="h-full flex flex-col bg-background">
       <div ref={scrollRef} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+          <PageHint id="chat">
+            PVault AI is your prompt companion. Paste a rough prompt and ask it to improve it, or
+            describe a job and it writes the prompt for you.
+          </PageHint>
+
           {empty && (
             <div className="pt-6 text-center">
               <div className="w-11 h-11 mx-auto rounded-2xl bg-secondary border border-border flex items-center justify-center mb-4">

@@ -9,8 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Folder, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Newsletter } from "@/components/newsletter";
-import { InstallPrompt } from "@/components/install-prompt";
+import { PageHint } from "@/components/page-hint";
 import { workflowHelpers } from "@/lib/workflows";
 
 interface ProjectsList {
@@ -162,6 +161,11 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
     <div className="min-h-screen bg-background">
       {/* Content */}
       <div className="max-w-3xl mx-auto px-4 py-5 pb-28">
+        <PageHint id="projects">
+          Projects are your home base. Each one keeps the prompts, tools, flows and chats for a
+          single piece of work. Tap the + button to start one.
+        </PageHint>
+
         <div className="flex items-center justify-between mb-3">
           <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Folder className="h-4 w-4" /> Projects
@@ -197,11 +201,6 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
             ))}
           </div>
         )}
-
-        <div className="mt-8 space-y-4">
-          <InstallPrompt />
-          <Newsletter />
-        </div>
       </div>
 
 
