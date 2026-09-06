@@ -1,21 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Braces,
-  FileText,
-  Folder,
-  Wrench,
-  Download,
-  Search,
-  Sparkle,
-  MessageSquare,
-  Lock,
-  Eye,
-  GitBranch,
-  Smartphone,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Folder, Lock, Sparkle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
