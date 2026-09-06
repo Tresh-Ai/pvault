@@ -16,6 +16,7 @@ import { extractVariables, fillVariables } from "@/lib/variables";
 import { syncInBackground } from "@/lib/cloud";
 import { buildWorkspaceContext } from "@/lib/workspace-context";
 import { PROMPT_COACH_KNOWLEDGE } from "@/lib/prompt-coach";
+import { PageHint } from "@/components/page-hint";
 
 const SYSTEM_PROMPT = PROMPT_COACH_KNOWLEDGE;
 
