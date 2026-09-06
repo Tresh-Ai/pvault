@@ -255,6 +255,35 @@ export function PromptEditor() {
     void runInPVaultAI();
   };
 
+  /** Ask PVault AI to rewrite this prompt into a stronger version. */
+  const handleImprove = async () => {
+    if (!content.trim() || improving) return;
+    if (!isAIReady()) {
+      toast({
+        title: "Connect a model first",
+        description: "Add your AI provider in Settings, then improve any prompt in one tap.",
+      });
+      return;
+    }
+    setImproving(true);
+    try {
+      const improved = await improvePrompt(content, { title, format });
+      if (improved) {
+        markDirty();
+        setContent(improved);
+        toast({ title: "Prompt improved", description: "Undo brings the old version back." });
+      }
+    } catch (error) {
+      toast({
+        title: "Could not improve this prompt",
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setImproving(false);
+    }
+  };
+
 
   /** Hand the prompt to an external AI tool in a new tab. */
   const openExternal = async (target: typeof EXTERNAL_AI[number]) => {
