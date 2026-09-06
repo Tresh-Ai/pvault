@@ -15,13 +15,9 @@ import { getAISettings, isAIReady, streamChat } from "@/lib/ai";
 import { extractVariables, fillVariables } from "@/lib/variables";
 import { syncInBackground } from "@/lib/cloud";
 import { buildWorkspaceContext } from "@/lib/workspace-context";
+import { PROMPT_COACH_KNOWLEDGE } from "@/lib/prompt-coach";
 
-const SYSTEM_PROMPT = [
-  "You are PVault AI, the planning partner inside the user's local AI workspace.",
-  "You help them decide what to work on, plan the steps, and get it done using what they already have saved: projects, prompts, tools and flows.",
-  "You can see an inventory of their workspace below. Reference their saved prompts, tools and flows by name when they are useful, and say plainly when something is missing and worth saving.",
-  "Be direct and practical. Prefer short plans with concrete next steps. Use markdown when it helps readability.",
-].join(" ");
+const SYSTEM_PROMPT = PROMPT_COACH_KNOWLEDGE;
 
 
 interface Draft {

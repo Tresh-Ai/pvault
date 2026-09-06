@@ -26,7 +26,7 @@ export function AppShell() {
 
   const quickKind = useMemo<QuickKind | null>(() => {
     const path = location.pathname;
-    if (path.startsWith("/library/projects")) return "project";
+    if (path === "/" || path.startsWith("/library/projects")) return "project";
     if (path.startsWith("/library/prompts")) return "prompt";
     if (path.startsWith("/library/tools")) return "tool";
     if (path.startsWith("/library/flows")) return "flow";
@@ -65,7 +65,7 @@ export function AppShell() {
     document.body.style.userSelect = "none";
   };
 
-  const onChatRoute = location.pathname === "/" || location.pathname.startsWith("/c/") ||
+  const onChatRoute = location.pathname === "/chat" || location.pathname.startsWith("/c/") ||
     location.pathname.includes("/chat/");
   // Project pages own their floating button (new prompt, tool, flow or chat).
   const onProjectRoute = location.pathname.startsWith("/project/");
@@ -130,7 +130,7 @@ export function AppShell() {
       ) : (
         !onChatRoute && !onProjectRoute && (
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/chat")}
             aria-label="New chat"
             title="New chat"
             className="md:hidden fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-foreground text-background shadow-elevated flex items-center justify-center active:scale-95 transition-transform"

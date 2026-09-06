@@ -31,7 +31,8 @@ const App = () => (
           <Routes>
             {/* Chat-first shell */}
             <Route element={<AppShell />}>
-              <Route path="/" element={<ChatView />} />
+              <Route path="/" element={<ProjectsList />} />
+              <Route path="/chat" element={<ChatView />} />
               <Route path="/c/:chatId" element={<ChatView />} />
               <Route path="/library/projects" element={<ProjectsList />} />
               <Route path="/library/:kind" element={<Library />} />
