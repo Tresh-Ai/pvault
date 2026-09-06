@@ -7,6 +7,7 @@ import { PromptCard } from "@/components/prompt-card";
 import { ToolCard } from "@/components/tool-card";
 import { WorkflowCard } from "@/components/workflow-card";
 import { useToast } from "@/hooks/use-toast";
+import { PageHint } from "@/components/page-hint";
 
 type Kind = "prompts" | "tools" | "flows";
 
@@ -14,6 +15,12 @@ const META: Record<Kind, { title: string; icon: typeof FileText }> = {
   prompts: { title: "Prompts", icon: FileText },
   tools: { title: "Tools", icon: Wrench },
   flows: { title: "Flows", icon: GitBranch },
+};
+
+const HINTS: Record<Kind, string> = {
+  prompts: "Every prompt you save, across all projects. Tap one to edit it, or use the + button to add a new one and pick where it lives.",
+  tools: "The AI tools you keep coming back to. Tap a card to open the link, and the + button adds another.",
+  flows: "A flow chains prompts, tools and notes into steps you can replay. Tap one to run it step by step.",
 };
 
 const recency = (d?: Date | string) => (d ? new Date(d).getTime() : 0);
@@ -91,6 +98,8 @@ export default function Library() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 pb-28">
+      <PageHint id={`library-${kind}`}>{HINTS[kind]}</PageHint>
+
       <div className="flex items-center justify-between mb-3">
         <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <Icon className="h-4 w-4" /> {title}
