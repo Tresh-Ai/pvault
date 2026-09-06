@@ -365,7 +365,12 @@ export function Settings() {
         </CardContent>
       </Card>
 
+      {/* Install + newsletter */}
+      <InstallPrompt />
+      <Newsletter />
+
       {/* About */}
+
       <Card>
         <CardHeader>
           <CardTitle>About PVault</CardTitle>
