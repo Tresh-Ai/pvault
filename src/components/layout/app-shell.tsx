@@ -5,6 +5,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { UpdateDialog } from "@/components/update-dialog";
 import { QuickCreate, type QuickKind } from "@/components/quick-create";
+import { InstallDialog } from "@/components/install-dialog";
 
 const WIDTH_KEY = "pvault_sidebar_width";
 const MIN = 220;
@@ -69,6 +70,9 @@ export function AppShell() {
     location.pathname.includes("/chat/");
   // Project pages own their floating button (new prompt, tool, flow or chat).
   const onProjectRoute = location.pathname.startsWith("/project/");
+  // Pages where a floating action makes no sense.
+  const NO_FAB = ["/settings", "/changelog", "/auth", "/welcome", "/openrouter"];
+  const noFab = NO_FAB.some((p) => location.pathname.startsWith(p));
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden bg-background">
@@ -115,7 +119,7 @@ export function AppShell() {
         </main>
       </div>
 
-      {quickKind ? (
+      {quickKind && !noFab ? (
         <>
           <button
             onClick={() => setQuickOpen(true)}
@@ -128,7 +132,7 @@ export function AppShell() {
           <QuickCreate kind={quickKind} open={quickOpen} onOpenChange={setQuickOpen} />
         </>
       ) : (
-        !onChatRoute && !onProjectRoute && (
+        !onChatRoute && !onProjectRoute && !noFab && (
           <button
             onClick={() => navigate("/chat")}
             aria-label="New chat"
@@ -141,6 +145,7 @@ export function AppShell() {
       )}
 
       <UpdateDialog />
+      <InstallDialog />
     </div>
   );
 }

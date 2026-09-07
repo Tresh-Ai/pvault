@@ -26,7 +26,7 @@ import { applyTheme as applyStoredTheme, type ThemeChoice } from "@/lib/theme";
 import { ProviderSetup } from "@/components/settings/provider-setup";
 import { useSession } from "@/hooks/use-session";
 import { supabase } from "@/integrations/supabase/client";
-import { InstallPrompt } from "@/components/install-prompt";
+import { openInstallDialog } from "@/components/install-dialog";
 import { Newsletter } from "@/components/newsletter";
 import {
   getProfile,
@@ -368,7 +368,18 @@ export function Settings() {
       </Card>
 
       {/* Install + newsletter */}
-      <InstallPrompt />
+      <Card>
+        <CardHeader>
+          <CardTitle>Install PVault</CardTitle>
+          <CardDescription>PVault works best installed on your home screen: full screen, faster, fully offline.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button className="w-full rounded-full" onClick={openInstallDialog}>
+            <Download className="h-4 w-4 mr-2" />
+            Show install steps
+          </Button>
+        </CardContent>
+      </Card>
       <Newsletter />
 
       {/* About */}
