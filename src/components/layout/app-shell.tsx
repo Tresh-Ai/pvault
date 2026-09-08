@@ -22,8 +22,9 @@ export function AppShell() {
 }
 
 function ShellBody() {
-
+  const { header } = useHeaderState();
   const [open, setOpen] = useState(false);
+
   const [quickOpen, setQuickOpen] = useState(false);
   const [width, setWidth] = useState(() => {
     const saved = Number(localStorage.getItem(WIDTH_KEY));
