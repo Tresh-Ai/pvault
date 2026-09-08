@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Menu, Plus } from "lucide-react";
+import { ArrowLeft, Menu, Plus } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { UpdateDialog } from "@/components/update-dialog";
 import { QuickCreate, type QuickKind } from "@/components/quick-create";
 import { InstallDialog } from "@/components/install-dialog";
+import { PageHeaderProvider, useHeaderState } from "@/components/layout/page-header";
 
 const WIDTH_KEY = "pvault_sidebar_width";
 const MIN = 220;
@@ -13,7 +14,17 @@ const MAX = 420;
 
 /** Chat-first shell: resizable sidebar on desktop, slide-over on mobile. */
 export function AppShell() {
+  return (
+    <PageHeaderProvider>
+      <ShellBody />
+    </PageHeaderProvider>
+  );
+}
+
+function ShellBody() {
+  const { header } = useHeaderState();
   const [open, setOpen] = useState(false);
+
   const [quickOpen, setQuickOpen] = useState(false);
   const [width, setWidth] = useState(() => {
     const saved = Number(localStorage.getItem(WIDTH_KEY));
@@ -104,15 +115,35 @@ export function AppShell() {
       </Sheet>
 
       <div className="flex-1 min-w-0 flex flex-col border-l border-border md:border-l-0">
-        <div className="md:hidden shrink-0 h-11 flex items-center px-2">
+        <div className="shrink-0 h-11 flex items-center gap-1 px-2 border-b border-border/60">
           <button
             onClick={() => setOpen(true)}
             aria-label="Open menu"
-            className="h-9 w-9 rounded-lg flex items-center justify-center text-muted-foreground"
+            className="md:hidden h-9 w-9 rounded-lg flex items-center justify-center text-muted-foreground"
           >
             <Menu className="h-5 w-5" />
           </button>
+
+          {header.back && (
+            <button
+              onClick={() => navigate(-1)}
+              aria-label="Go back"
+              className="h-9 w-9 rounded-lg flex items-center justify-center text-muted-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          )}
+
+          <h1 className="min-w-0 flex-1 truncate px-1 text-sm font-semibold tracking-tight">
+            {header.title ?? ""}
+          </h1>
+
+          {typeof header.count === "number" && (
+            <span className="shrink-0 px-1 text-xs text-muted-foreground">{header.count}</span>
+          )}
+          {header.actions}
         </div>
+
 
         <main className="flex-1 min-h-0 overflow-y-auto">
           <Outlet />

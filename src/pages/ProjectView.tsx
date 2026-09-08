@@ -19,6 +19,8 @@ import { Chat, chatHelpers } from "@/lib/chats";
 import { WorkflowCard } from "@/components/workflow-card";
 import { useToast } from "@/hooks/use-toast";
 import { PageHint } from "@/components/page-hint";
+import { usePageHeader } from "@/components/layout/page-header";
+
 import { PromptCreationModal } from "@/components/PromptCreationModal";
 import { FilterDropdown } from "@/components/ui/filter-dropdown";
 
@@ -321,43 +323,53 @@ export default function ProjectView() {
     });
   });
 
+  const tabCount =
+    activeTab === "prompts"
+      ? prompts.length
+      : activeTab === "tools"
+        ? tools.length
+        : activeTab === "workflows"
+          ? workflows.length
+          : chats.length;
+
+  usePageHeader(
+    {
+      title: project?.name,
+      count: project ? tabCount : undefined,
+      back: true,
+      actions: project ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              aria-label="Project menu"
+              className="shrink-0 h-9 w-9 rounded-lg flex items-center justify-center text-muted-foreground"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsEditProjectOpen(true)}>
+              <Pencil className="h-4 w-4 mr-2" /> Edit project
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleDeleteProject} className="text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" /> Delete project
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : undefined,
+    },
+    [project?.id, project?.name, tabCount],
+  );
+
   if (!project) {
     return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="h-12 flex items-center gap-2">
-            <button
-              onClick={() => navigate(-1)}
-              aria-label="Go back"
-              className="shrink-0 h-8 w-8 -ml-1 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <h1 className="text-base font-semibold tracking-tight truncate flex-1">{project.name}</h1>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  aria-label="Project menu"
-                  className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsEditProjectOpen(true)}>
-                  <Pencil className="h-4 w-4 mr-2" /> Edit project
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDeleteProject} className="text-destructive">
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete project
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+        <div className="max-w-2xl mx-auto px-4 pt-3">
+
 
           <div className="pb-3 space-y-2">
             <div className="flex gap-2 items-center">

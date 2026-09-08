@@ -8,6 +8,8 @@ import { ToolCard } from "@/components/tool-card";
 import { WorkflowCard } from "@/components/workflow-card";
 import { useToast } from "@/hooks/use-toast";
 import { PageHint } from "@/components/page-hint";
+import { usePageHeader } from "@/components/layout/page-header";
+
 
 type Kind = "prompts" | "tools" | "flows";
 
@@ -78,6 +80,9 @@ export default function Library() {
 
   const count = active === "prompts" ? sortedPrompts.length : active === "tools" ? sortedTools.length : sortedFlows.length;
 
+  usePageHeader({ title, count }, [title, count]);
+
+
   const deletePrompt = async (p: Prompt) => {
     await dbHelpers.deletePrompt(p.id);
     setPrompts((prev) => prev.filter((x) => x.id !== p.id));
@@ -100,12 +105,7 @@ export default function Library() {
     <div className="max-w-2xl mx-auto px-4 py-4 pb-28">
       <PageHint id={`library-${kind}`}>{HINTS[kind]}</PageHint>
 
-      <div className="flex items-center justify-between mb-3">
-        <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Icon className="h-4 w-4" /> {title}
-        </span>
-        <span className="text-xs text-muted-foreground">{count}</span>
-      </div>
+
 
       {count === 0 ? (
         <p className="py-16 text-center text-sm text-muted-foreground">
