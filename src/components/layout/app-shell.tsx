@@ -115,15 +115,35 @@ function ShellBody() {
       </Sheet>
 
       <div className="flex-1 min-w-0 flex flex-col border-l border-border md:border-l-0">
-        <div className="md:hidden shrink-0 h-11 flex items-center px-2">
+        <div className="shrink-0 h-11 flex items-center gap-1 px-2 border-b border-border/60">
           <button
             onClick={() => setOpen(true)}
             aria-label="Open menu"
-            className="h-9 w-9 rounded-lg flex items-center justify-center text-muted-foreground"
+            className="md:hidden h-9 w-9 rounded-lg flex items-center justify-center text-muted-foreground"
           >
             <Menu className="h-5 w-5" />
           </button>
+
+          {header.back && (
+            <button
+              onClick={() => navigate(-1)}
+              aria-label="Go back"
+              className="h-9 w-9 rounded-lg flex items-center justify-center text-muted-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          )}
+
+          <h1 className="min-w-0 flex-1 truncate px-1 text-sm font-semibold tracking-tight">
+            {header.title ?? ""}
+          </h1>
+
+          {typeof header.count === "number" && (
+            <span className="shrink-0 px-1 text-xs text-muted-foreground">{header.count}</span>
+          )}
+          {header.actions}
         </div>
+
 
         <main className="flex-1 min-h-0 overflow-y-auto">
           <Outlet />
