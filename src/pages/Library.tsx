@@ -8,6 +8,8 @@ import { ToolCard } from "@/components/tool-card";
 import { WorkflowCard } from "@/components/workflow-card";
 import { useToast } from "@/hooks/use-toast";
 import { PageHint } from "@/components/page-hint";
+import { usePageHeader } from "@/components/layout/page-header";
+
 
 type Kind = "prompts" | "tools" | "flows";
 
@@ -77,6 +79,9 @@ export default function Library() {
   );
 
   const count = active === "prompts" ? sortedPrompts.length : active === "tools" ? sortedTools.length : sortedFlows.length;
+
+  usePageHeader({ title, count }, [title, count]);
+
 
   const deletePrompt = async (p: Prompt) => {
     await dbHelpers.deletePrompt(p.id);

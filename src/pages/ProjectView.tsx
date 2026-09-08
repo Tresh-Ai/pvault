@@ -19,6 +19,8 @@ import { Chat, chatHelpers } from "@/lib/chats";
 import { WorkflowCard } from "@/components/workflow-card";
 import { useToast } from "@/hooks/use-toast";
 import { PageHint } from "@/components/page-hint";
+import { usePageHeader } from "@/components/layout/page-header";
+
 import { PromptCreationModal } from "@/components/PromptCreationModal";
 import { FilterDropdown } from "@/components/ui/filter-dropdown";
 
