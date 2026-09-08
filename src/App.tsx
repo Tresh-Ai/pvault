@@ -11,6 +11,7 @@ import Changelog from "./pages/Changelog";
 import ChatView from "./pages/ChatView";
 import Library from "./pages/Library";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
 import OpenRouterCallback from "./pages/OpenRouterCallback";
 import { ProjectsList } from "./pages/ProjectsList";
 import { Settings } from "./pages/Settings";
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/project/:projectId/prompt/edit" element={<PromptEditor />} />
             <Route path="/project/:projectId/workflow/:workflowId" element={<WorkflowView />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/oauth/openrouter" element={<OpenRouterCallback />} />
 
             {/* Legacy paths */}
