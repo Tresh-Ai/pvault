@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Menu, Plus } from "lucide-react";
+import { ArrowLeft, Menu, Plus } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { UpdateDialog } from "@/components/update-dialog";
 import { QuickCreate, type QuickKind } from "@/components/quick-create";
 import { InstallDialog } from "@/components/install-dialog";
+import { PageHeaderProvider, useHeaderState } from "@/components/layout/page-header";
 
 const WIDTH_KEY = "pvault_sidebar_width";
 const MIN = 220;
@@ -13,6 +14,15 @@ const MAX = 420;
 
 /** Chat-first shell: resizable sidebar on desktop, slide-over on mobile. */
 export function AppShell() {
+  return (
+    <PageHeaderProvider>
+      <ShellBody />
+    </PageHeaderProvider>
+  );
+}
+
+function ShellBody() {
+
   const [open, setOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [width, setWidth] = useState(() => {
