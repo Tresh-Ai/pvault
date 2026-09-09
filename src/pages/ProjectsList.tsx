@@ -7,10 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Folder, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PageHint } from "@/components/page-hint";
 import { workflowHelpers } from "@/lib/workflows";
+import { usePageHeader } from "@/components/layout/page-header";
 
 interface ProjectsList {
   onProjectSelect?: (project: Project) => void;
@@ -28,6 +29,8 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  usePageHeader({ title: "Projects", count: projects.length }, [projects.length]);
 
   useEffect(() => {
     loadProjects();

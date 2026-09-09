@@ -243,7 +243,7 @@ export function Settings() {
                 variant="ghost"
                 className="w-full justify-start text-muted-foreground"
                 onClick={async () => {
-                  await supabase.auth.signOut();
+                  await signOutEverywhere();
                   setSyncEnabled(false);
                   setSync(false);
                   toast({ title: "Signed out", description: "Your local workspace is untouched." });
