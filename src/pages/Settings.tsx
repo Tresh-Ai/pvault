@@ -56,6 +56,10 @@ export function Settings() {
   const navigate = useNavigate();
   const { user } = useSession();
 
+  usePageHeader({ title: "Settings", back: true }, []);
+
+
+
   useEffect(() => {
     dbHelpers.getSettings().then((s) =>
       setSettings({
