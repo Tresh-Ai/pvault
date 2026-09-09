@@ -26,6 +26,9 @@ import { applyTheme as applyStoredTheme, type ThemeChoice } from "@/lib/theme";
 import { ProviderSetup } from "@/components/settings/provider-setup";
 import { useSession } from "@/hooks/use-session";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutEverywhere } from "@/lib/auth";
+import { usePageHeader } from "@/components/layout/page-header";
+
 import { openInstallDialog } from "@/components/install-dialog";
 import { Newsletter } from "@/components/newsletter";
 import {
