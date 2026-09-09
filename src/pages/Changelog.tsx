@@ -1,7 +1,6 @@
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft } from "lucide-react";
+import { usePageHeader } from "@/components/layout/page-header";
+
 
 interface Release {
   version: string;
@@ -149,26 +148,12 @@ const RELEASES: Release[] = [
 ];
 
 export default function Changelog() {
-  const navigate = useNavigate();
+  usePageHeader({ title: "Changelog", back: true }, []);
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 h-12 flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 rounded-full"
-            onClick={() => navigate(-1)}
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-sm font-medium">Changelog</h1>
-        </div>
-      </div>
-
       <div className="max-w-2xl mx-auto px-4 py-8 pb-20">
+
         <p className="text-[10px] font-medium tracking-widest uppercase text-muted-foreground mb-2">
           What's new
         </p>

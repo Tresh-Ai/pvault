@@ -166,12 +166,8 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
           single piece of work. Tap the + button to start one.
         </PageHint>
 
-        <div className="flex items-center justify-between mb-3">
-          <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Folder className="h-4 w-4" /> Projects
-          </span>
-          <span className="text-xs text-muted-foreground">{projects.length}</span>
-        </div>
+
+
 
 
         {filteredProjects.length === 0 ? (
