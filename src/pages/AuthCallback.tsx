@@ -35,7 +35,15 @@ export default function AuthCallback() {
         } else if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
+        } else {
+          const { data: existing } = await supabase.auth.getSession();
+          if (!existing.session) {
+            throw new Error(
+              "The sign-in link was missing or has already been used. Start the sign-in again.",
+            );
+          }
         }
+
 
         // Clear tokens from the address bar so they are never left in history.
         window.history.replaceState({}, "", "/auth/callback");
@@ -77,9 +85,18 @@ export default function AuthCallback() {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">{message}</p>
         {state === "error" && (
-          <Button className="mt-5 rounded-full" onClick={() => navigate("/auth", { replace: true })}>
-            Back to sign in
-          </Button>
+          <div className="mt-5 flex items-center justify-center gap-2">
+            <Button className="rounded-full" onClick={() => navigate("/auth", { replace: true })}>
+              Try again
+            </Button>
+            <Button
+              variant="ghost"
+              className="rounded-full"
+              onClick={() => navigate("/", { replace: true })}
+            >
+              Continue offline
+            </Button>
+          </div>
         )}
       </div>
     </div>

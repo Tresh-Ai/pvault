@@ -26,6 +26,9 @@ import { applyTheme as applyStoredTheme, type ThemeChoice } from "@/lib/theme";
 import { ProviderSetup } from "@/components/settings/provider-setup";
 import { useSession } from "@/hooks/use-session";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutEverywhere } from "@/lib/auth";
+import { usePageHeader } from "@/components/layout/page-header";
+
 import { openInstallDialog } from "@/components/install-dialog";
 import { Newsletter } from "@/components/newsletter";
 import {
@@ -52,6 +55,10 @@ export function Settings() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useSession();
+
+  usePageHeader({ title: "Settings", back: true }, []);
+
+
 
   useEffect(() => {
     dbHelpers.getSettings().then((s) =>
@@ -168,7 +175,7 @@ export function Settings() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-24 space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+
 
       {/* AI provider - the first thing anyone should set up */}
       <Card>
@@ -236,7 +243,7 @@ export function Settings() {
                 variant="ghost"
                 className="w-full justify-start text-muted-foreground"
                 onClick={async () => {
-                  await supabase.auth.signOut();
+                  await signOutEverywhere();
                   setSyncEnabled(false);
                   setSync(false);
                   toast({ title: "Signed out", description: "Your local workspace is untouched." });
