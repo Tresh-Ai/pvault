@@ -41,18 +41,35 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   const q = query.trim();
   if (!q) return [];
 
-  const projects: Project[] = await dbHelpers.getAllProjects();
+  // Performance Optimization:
+  // Fetch projects and chats concurrently, then fetch prompts, tools, and workflows
+  // across all projects in parallel via Promise.all instead of sequential await loops (O(1) async wait steps instead of O(N)).
+  const [projects, chats] = await Promise.all([
+    dbHelpers.getAllProjects(),
+    chatHelpers.getAllChats(),
+  ]);
+
   const projectName = new Map(projects.map((p) => [p.id, p.name]));
+
+  const projectDetailsList = await Promise.all(
+    projects.map((project) =>
+      Promise.all([
+        dbHelpers.getProjectPrompts(project.id),
+        dbHelpers.getProjectTools(project.id),
+        workflowHelpers.getProjectWorkflows(project.id),
+      ])
+    )
+  );
 
   const prompts: Prompt[] = [];
   const tools: Tool[] = [];
   const flows: Workflow[] = [];
-  for (const project of projects) {
-    prompts.push(...(await dbHelpers.getProjectPrompts(project.id)));
-    tools.push(...(await dbHelpers.getProjectTools(project.id)));
-    flows.push(...(await workflowHelpers.getProjectWorkflows(project.id)));
+
+  for (const [projectPrompts, projectTools, projectWorkflows] of projectDetailsList) {
+    prompts.push(...projectPrompts);
+    tools.push(...projectTools);
+    flows.push(...projectWorkflows);
   }
-  const chats: Chat[] = await chatHelpers.getAllChats();
 
   const results: SearchResult[] = [];
 
@@ -135,16 +152,32 @@ export interface UsageStats {
 
 /** Local-only analytics. Nothing leaves the device. */
 export async function getUsageStats(): Promise<UsageStats> {
-  const projects = await dbHelpers.getAllProjects();
+  // Performance Optimization:
+  // Fetch projects and chats concurrently, and query all project details in parallel using Promise.all.
+  const [projects, chats] = await Promise.all([
+    dbHelpers.getAllProjects(),
+    chatHelpers.getAllChats(),
+  ]);
+
+  const projectDetailsList = await Promise.all(
+    projects.map((project) =>
+      Promise.all([
+        dbHelpers.getProjectPrompts(project.id),
+        dbHelpers.getProjectTools(project.id),
+        workflowHelpers.getProjectWorkflows(project.id),
+      ])
+    )
+  );
+
   const prompts: Prompt[] = [];
   const tools: Tool[] = [];
   const flows: Workflow[] = [];
-  for (const project of projects) {
-    prompts.push(...(await dbHelpers.getProjectPrompts(project.id)));
-    tools.push(...(await dbHelpers.getProjectTools(project.id)));
-    flows.push(...(await workflowHelpers.getProjectWorkflows(project.id)));
+
+  for (const [projectPrompts, projectTools, projectWorkflows] of projectDetailsList) {
+    prompts.push(...projectPrompts);
+    tools.push(...projectTools);
+    flows.push(...projectWorkflows);
   }
-  const chats = await chatHelpers.getAllChats();
 
   const tagCounts = new Map<string, number>();
   prompts.forEach((p) => p.tags.forEach((tag) => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)));
