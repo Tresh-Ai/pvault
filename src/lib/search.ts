@@ -41,18 +41,16 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   const q = query.trim();
   if (!q) return [];
 
-  const projects: Project[] = await dbHelpers.getAllProjects();
-  const projectName = new Map(projects.map((p) => [p.id, p.name]));
+  // Optimize: Fetch all global resources concurrently using Promise.all instead of sequential O(N) await loops
+  const [projects, prompts, tools, flows, chats] = await Promise.all([
+    dbHelpers.getAllProjects(),
+    dbHelpers.getAllPrompts(),
+    dbHelpers.getAllTools(),
+    workflowHelpers.getAllWorkflows(),
+    chatHelpers.getAllChats(),
+  ]);
 
-  const prompts: Prompt[] = [];
-  const tools: Tool[] = [];
-  const flows: Workflow[] = [];
-  for (const project of projects) {
-    prompts.push(...(await dbHelpers.getProjectPrompts(project.id)));
-    tools.push(...(await dbHelpers.getProjectTools(project.id)));
-    flows.push(...(await workflowHelpers.getProjectWorkflows(project.id)));
-  }
-  const chats: Chat[] = await chatHelpers.getAllChats();
+  const projectName = new Map(projects.map((p) => [p.id, p.name]));
 
   const results: SearchResult[] = [];
 
@@ -135,16 +133,14 @@ export interface UsageStats {
 
 /** Local-only analytics. Nothing leaves the device. */
 export async function getUsageStats(): Promise<UsageStats> {
-  const projects = await dbHelpers.getAllProjects();
-  const prompts: Prompt[] = [];
-  const tools: Tool[] = [];
-  const flows: Workflow[] = [];
-  for (const project of projects) {
-    prompts.push(...(await dbHelpers.getProjectPrompts(project.id)));
-    tools.push(...(await dbHelpers.getProjectTools(project.id)));
-    flows.push(...(await workflowHelpers.getProjectWorkflows(project.id)));
-  }
-  const chats = await chatHelpers.getAllChats();
+  // Optimize: Concurrently fetch all collections in a single round-trip instead of sequential loops per project
+  const [projects, prompts, tools, flows, chats] = await Promise.all([
+    dbHelpers.getAllProjects(),
+    dbHelpers.getAllPrompts(),
+    dbHelpers.getAllTools(),
+    workflowHelpers.getAllWorkflows(),
+    chatHelpers.getAllChats(),
+  ]);
 
   const tagCounts = new Map<string, number>();
   prompts.forEach((p) => p.tags.forEach((tag) => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)));
