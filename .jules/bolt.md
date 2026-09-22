@@ -1,0 +1,3 @@
+## 2026-09-22 - Batching collection reads vs sequential project iteration
+**Learning:** Functions like `searchEverything` and `getUsageStats` previously looped over projects and fetched prompts, tools, and workflows per-project. Because each helper (`dbHelpers.getProjectPrompts`) reads and parses `localStorage` independently, a 10-project setup resulted in 31 sequential `localStorage` reads and JSON parses.
+**Action:** Always fetch entire collections concurrently with `Promise.all([getAllProjects(), getAllPrompts(), getAllTools(), ...])` instead of serial per-project queries when performing global operations.

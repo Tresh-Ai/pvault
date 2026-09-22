@@ -41,18 +41,17 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   const q = query.trim();
   if (!q) return [];
 
-  const projects: Project[] = await dbHelpers.getAllProjects();
+  // Performance Optimization: Batch entity retrieval in parallel using Promise.all instead of sequential
+  // per-project iteration loops. This reduces storage reads from (1 + 3*N) down to 5 calls, eliminating
+  // redundant JSON deserializations and serial async waterfalls.
+  const [projects, prompts, tools, flows, chats] = await Promise.all([
+    dbHelpers.getAllProjects(),
+    dbHelpers.getAllPrompts(),
+    dbHelpers.getAllTools(),
+    workflowHelpers.getAllWorkflows(),
+    chatHelpers.getAllChats(),
+  ]);
   const projectName = new Map(projects.map((p) => [p.id, p.name]));
-
-  const prompts: Prompt[] = [];
-  const tools: Tool[] = [];
-  const flows: Workflow[] = [];
-  for (const project of projects) {
-    prompts.push(...(await dbHelpers.getProjectPrompts(project.id)));
-    tools.push(...(await dbHelpers.getProjectTools(project.id)));
-    flows.push(...(await workflowHelpers.getProjectWorkflows(project.id)));
-  }
-  const chats: Chat[] = await chatHelpers.getAllChats();
 
   const results: SearchResult[] = [];
 
@@ -135,16 +134,14 @@ export interface UsageStats {
 
 /** Local-only analytics. Nothing leaves the device. */
 export async function getUsageStats(): Promise<UsageStats> {
-  const projects = await dbHelpers.getAllProjects();
-  const prompts: Prompt[] = [];
-  const tools: Tool[] = [];
-  const flows: Workflow[] = [];
-  for (const project of projects) {
-    prompts.push(...(await dbHelpers.getProjectPrompts(project.id)));
-    tools.push(...(await dbHelpers.getProjectTools(project.id)));
-    flows.push(...(await workflowHelpers.getProjectWorkflows(project.id)));
-  }
-  const chats = await chatHelpers.getAllChats();
+  // Performance Optimization: Fetch all collections in parallel instead of looping through projects sequentially.
+  const [projects, prompts, tools, flows, chats] = await Promise.all([
+    dbHelpers.getAllProjects(),
+    dbHelpers.getAllPrompts(),
+    dbHelpers.getAllTools(),
+    workflowHelpers.getAllWorkflows(),
+    chatHelpers.getAllChats(),
+  ]);
 
   const tagCounts = new Map<string, number>();
   prompts.forEach((p) => p.tags.forEach((tag) => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)));
