@@ -30,7 +30,7 @@ export function ToolCard({ tool, onEdit, onDelete, onIncrementUsage }: ToolCardP
             <h3 className="text-base font-semibold tracking-tight line-clamp-1">{tool.name}</h3>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 -mr-1 -mt-1">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 -mr-1 -mt-1" aria-label="Tool menu">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
