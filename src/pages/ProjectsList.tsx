@@ -42,13 +42,21 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
       // Sort by updatedAt in reverse order
       allProjects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       setProjects(allProjects);
-      
-      // Load counts for each project
+
+      // Load counts for each project concurrently using Promise.all to eliminate sequential N+1 async wait times
+      const countsList = await Promise.all(
+        allProjects.map(async (project) => {
+          const [prompts, tools] = await Promise.all([
+            dbHelpers.getProjectPrompts(project.id),
+            dbHelpers.getProjectTools(project.id),
+          ]);
+          return { id: project.id, prompts: prompts.length, tools: tools.length };
+        })
+      );
+
       const counts: Record<string, { prompts: number; tools: number }> = {};
-      for (const project of allProjects) {
-        const projectPrompts = await dbHelpers.getProjectPrompts(project.id);
-        const projectTools = await dbHelpers.getProjectTools(project.id);
-        counts[project.id] = { prompts: projectPrompts.length, tools: projectTools.length };
+      for (const c of countsList) {
+        counts[c.id] = { prompts: c.prompts, tools: c.tools };
       }
       setProjectCounts(counts);
     } catch (error) {
