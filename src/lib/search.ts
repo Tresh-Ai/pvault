@@ -41,18 +41,17 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   const q = query.trim();
   if (!q) return [];
 
-  const projects: Project[] = await dbHelpers.getAllProjects();
-  const projectName = new Map(projects.map((p) => [p.id, p.name]));
+  // Bolt Performance Optimization: Fetch all collections in parallel using single-pass helpers.
+  // Replaces O(N) sequential project loop that caused 3N+2 redundant LocalStorage reads & JSON parses.
+  const [projects, prompts, tools, flows, chats] = await Promise.all([
+    dbHelpers.getAllProjects(),
+    dbHelpers.getAllPrompts(),
+    dbHelpers.getAllTools(),
+    workflowHelpers.getAllWorkflows(),
+    chatHelpers.getAllChats(),
+  ]);
 
-  const prompts: Prompt[] = [];
-  const tools: Tool[] = [];
-  const flows: Workflow[] = [];
-  for (const project of projects) {
-    prompts.push(...(await dbHelpers.getProjectPrompts(project.id)));
-    tools.push(...(await dbHelpers.getProjectTools(project.id)));
-    flows.push(...(await workflowHelpers.getProjectWorkflows(project.id)));
-  }
-  const chats: Chat[] = await chatHelpers.getAllChats();
+  const projectName = new Map(projects.map((p) => [p.id, p.name]));
 
   const results: SearchResult[] = [];
 
@@ -114,9 +113,9 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
         id: c.id,
         title: c.title,
         subtitle: `${c.messages.length} ${c.messages.length === 1 ? "message" : "messages"}`,
-        projectId: c.projectId,
-        projectName: projectName.get(c.projectId),
-        href: `/project/${c.projectId}/chat/${c.id}`,
+        projectId: c.projectId || undefined,
+        projectName: c.projectId ? projectName.get(c.projectId) : undefined,
+        href: c.projectId ? `/project/${c.projectId}/chat/${c.id}` : `/c/${c.id}`,
         score: s,
       });
   }
@@ -135,16 +134,14 @@ export interface UsageStats {
 
 /** Local-only analytics. Nothing leaves the device. */
 export async function getUsageStats(): Promise<UsageStats> {
-  const projects = await dbHelpers.getAllProjects();
-  const prompts: Prompt[] = [];
-  const tools: Tool[] = [];
-  const flows: Workflow[] = [];
-  for (const project of projects) {
-    prompts.push(...(await dbHelpers.getProjectPrompts(project.id)));
-    tools.push(...(await dbHelpers.getProjectTools(project.id)));
-    flows.push(...(await workflowHelpers.getProjectWorkflows(project.id)));
-  }
-  const chats = await chatHelpers.getAllChats();
+  // Bolt Performance Optimization: Fetch all collections concurrently in parallel.
+  const [projects, prompts, tools, flows, chats] = await Promise.all([
+    dbHelpers.getAllProjects(),
+    dbHelpers.getAllPrompts(),
+    dbHelpers.getAllTools(),
+    workflowHelpers.getAllWorkflows(),
+    chatHelpers.getAllChats(),
+  ]);
 
   const tagCounts = new Map<string, number>();
   prompts.forEach((p) => p.tags.forEach((tag) => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)));
