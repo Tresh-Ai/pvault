@@ -80,9 +80,9 @@ const storage = {
   get<T>(key: string): T[] {
     try {
       const data = localStorage.getItem(key);
-      return data ? JSON.parse(data, (key, value) => {
-        // Convert ISO date strings back to Date objects
-        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+      return data ? JSON.parse(data, (_key, value) => {
+        // Fast pre-check string length and 'T' delimiter before regex test to bypass non-date strings
+        if (typeof value === 'string' && value.length >= 19 && value.length <= 28 && value.charCodeAt(10) === 84 && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
           return new Date(value);
         }
         return value;
@@ -143,8 +143,8 @@ export const dbHelpers = {
   },
 
   // Migration helper for existing prompts without versions
-  async migratePromptsToVersioning(): Promise<void> {
-    const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+  async migratePromptsToVersioning(promptsList?: Prompt[]): Promise<Prompt[]> {
+    const prompts = promptsList || storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
     let hasChanges = false;
     
     prompts.forEach(prompt => {
@@ -164,6 +164,7 @@ export const dbHelpers = {
     if (hasChanges) {
       storage.set(STORAGE_KEYS.PROMPTS, prompts);
     }
+    return prompts;
   },
 
   // Prompts
@@ -290,15 +291,12 @@ export const dbHelpers = {
   },
 
   async getProjectPrompts(projectId: string): Promise<Prompt[]> {
-    // Ensure migration runs first
-    await this.migratePromptsToVersioning();
-    const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    const prompts = await this.migratePromptsToVersioning();
     return prompts.filter(p => p.projectId === projectId);
   },
 
   async getAllPrompts(): Promise<Prompt[]> {
-    await this.migratePromptsToVersioning();
-    return storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    return this.migratePromptsToVersioning();
   },
 
   async getAllTools(): Promise<Tool[]> {
