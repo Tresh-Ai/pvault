@@ -104,7 +104,7 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
           )}
         </div>
         <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <Button onClick={handleCopy} variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs">
+          <Button onClick={handleCopy} variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" aria-label="Copy prompt content">
             <Copy className="h-3.5 w-3.5 mr-1" />
             Copy
           </Button>

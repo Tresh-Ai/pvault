@@ -478,6 +478,7 @@ export function PromptEditor() {
             type="button"
             onClick={startRunInPVaultAI}
             disabled={!content.trim()}
+            aria-label="Run prompt in PVault AI"
             className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium disabled:opacity-40"
           >
             <Sparkle className="h-3.5 w-3.5" /> Run in PVault AI
@@ -486,6 +487,7 @@ export function PromptEditor() {
             type="button"
             onClick={handleImprove}
             disabled={!content.trim() || improving}
+            aria-label="Improve prompt with AI"
             className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-40"
           >
             {improving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
@@ -497,6 +499,7 @@ export function PromptEditor() {
               type="button"
               onClick={() => openExternal(target)}
               disabled={!content.trim()}
+              aria-label={`Open in ${target.name}`}
               className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-40"
             >
               <ExternalLink className="h-3.5 w-3.5" /> {target.name}
