@@ -123,7 +123,7 @@ export default function WorkflowView() {
     const tool = step.refId ? toolMap.get(step.refId) : undefined;
     if (tool?.url) {
       await dbHelpers.incrementToolUsage(tool.id);
-      window.open(tool.url, "_blank");
+      window.open(tool.url, "_blank", "noopener,noreferrer");
     }
     setDone((d) => ({ ...d, [step.id]: true }));
   };
