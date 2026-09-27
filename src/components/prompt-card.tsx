@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Prompt } from "@/lib/database";
 import { Copy, Star, MoreVertical, Download, Hash, Pencil, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -62,21 +63,35 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
       <div className="flex items-start justify-between gap-2 mb-2">
         <h3 className="text-base font-semibold tracking-tight line-clamp-2 flex-1">{prompt.title}</h3>
         <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleFavorite}
-            aria-label="Toggle favorite"
-            className={cn("h-8 w-8 p-0", prompt.isFavorite ? "text-primary" : "text-muted-foreground")}
-          >
-            <Star className={cn("h-4 w-4", prompt.isFavorite && "fill-current")} />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground" aria-label="Prompt menu">
-                <MoreVertical className="h-4 w-4" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleFavorite}
+                aria-label={prompt.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                className={cn("h-8 w-8 p-0", prompt.isFavorite ? "text-primary" : "text-muted-foreground")}
+              >
+                <Star className={cn("h-4 w-4", prompt.isFavorite && "fill-current")} />
               </Button>
-            </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>{prompt.isFavorite ? "Remove from favorites" : "Add to favorites"}</p>
+            </TooltipContent>
+          </Tooltip>
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground" aria-label="More options">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>More options</p>
+              </TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onEdit}>
                 <Pencil className="h-4 w-4 mr-2" /> Edit
@@ -108,9 +123,16 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
             <Copy className="h-3.5 w-3.5 mr-1" />
             Copy
           </Button>
-          <Button onClick={handleExport} variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Export prompt">
-            <Download className="h-3.5 w-3.5" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={handleExport} variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Export prompt">
+                <Download className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Export prompt</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </div>
