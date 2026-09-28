@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Prompt } from "@/lib/database";
-import { Copy, Star, MoreVertical, Download, Hash, Pencil, Trash2 } from "lucide-react";
+import { Copy, Check, Star, MoreVertical, Download, Hash, Pencil, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -16,13 +17,16 @@ interface PromptCardProps {
 
 export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncrementUsage }: PromptCardProps) {
   const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(prompt.content);
       onIncrementUsage();
+      setCopied(true);
       toast({ title: "Copied", description: "Prompt copied to clipboard." });
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       toast({ title: "Copy failed", variant: "destructive" });
     }
@@ -66,7 +70,7 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
             variant="ghost"
             size="sm"
             onClick={onToggleFavorite}
-            aria-label="Toggle favorite"
+            aria-label={prompt.isFavorite ? "Remove from favorites" : "Add to favorites"}
             className={cn("h-8 w-8 p-0", prompt.isFavorite ? "text-primary" : "text-muted-foreground")}
           >
             <Star className={cn("h-4 w-4", prompt.isFavorite && "fill-current")} />
@@ -104,9 +108,27 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
           )}
         </div>
         <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <Button onClick={handleCopy} variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs">
-            <Copy className="h-3.5 w-3.5 mr-1" />
-            Copy
+          <Button
+            onClick={handleCopy}
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-8 rounded-full px-3 text-xs transition-colors",
+              copied && "text-emerald-600 dark:text-emerald-400 font-medium"
+            )}
+            aria-label={copied ? "Copied to clipboard" : "Copy prompt text"}
+          >
+            {copied ? (
+              <>
+                <Check className="h-3.5 w-3.5 mr-1" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                Copy
+              </>
+            )}
           </Button>
           <Button onClick={handleExport} variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Export prompt">
             <Download className="h-3.5 w-3.5" />
