@@ -16,19 +16,19 @@ export interface SearchResult {
   score: number;
 }
 
-function score(query: string, ...fields: (string | undefined)[]): number {
-  const q = query.trim().toLowerCase();
-  if (!q) return 0;
-  let best = 0;
-  fields.forEach((field, index) => {
-    if (!field) return;
-    const value = field.toLowerCase();
-    const weight = index === 0 ? 3 : 1;
-    if (value === q) best = Math.max(best, 100 * weight);
-    else if (value.startsWith(q)) best = Math.max(best, 60 * weight);
-    else if (value.includes(q)) best = Math.max(best, 30 * weight);
-  });
-  return best;
+/**
+ * Bolt Performance Optimization:
+ * Score a single pre-normalized field against a pre-normalized query `q`.
+ * Avoids repeated `trim()`, `toLowerCase()`, spread parameter array allocations,
+ * and callback function closures on every keystroke.
+ */
+function scoreField(q: string, field: string | undefined, weight: number): number {
+  if (!field) return 0;
+  const value = field.toLowerCase();
+  if (value === q) return 100 * weight;
+  if (value.startsWith(q)) return 60 * weight;
+  if (value.includes(q)) return 30 * weight;
+  return 0;
 }
 
 function excerpt(text: string, length = 70): string {
@@ -38,7 +38,8 @@ function excerpt(text: string, length = 70): string {
 
 /** One search across projects, prompts, tools, flows and chats. */
 export async function searchEverything(query: string, limit = 40): Promise<SearchResult[]> {
-  const q = query.trim();
+  // Normalize query once per search invocation
+  const q = query.trim().toLowerCase();
   if (!q) return [];
 
   // Bolt Performance Optimization: Fetch all collections in parallel using single-pass helpers.
@@ -56,12 +57,21 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   const results: SearchResult[] = [];
 
   for (const p of projects) {
-    const s = score(q, p.name, p.description, p.tags.join(" "));
+    const s = Math.max(
+      scoreField(q, p.name, 3),
+      scoreField(q, p.description, 1),
+      scoreField(q, p.tags.join(" "), 1)
+    );
     if (s) results.push({ kind: "project", id: p.id, title: p.name, subtitle: p.description, href: `/project/${p.id}`, score: s });
   }
 
   for (const p of prompts) {
-    const s = score(q, p.title, p.content, p.tags.join(" "), p.category);
+    const s = Math.max(
+      scoreField(q, p.title, 3),
+      scoreField(q, p.content, 1),
+      scoreField(q, p.tags.join(" "), 1),
+      scoreField(q, p.category, 1)
+    );
     if (s)
       results.push({
         kind: "prompt",
@@ -76,7 +86,12 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   }
 
   for (const t of tools) {
-    const s = score(q, t.name, t.notes, t.tags.join(" "), t.category);
+    const s = Math.max(
+      scoreField(q, t.name, 3),
+      scoreField(q, t.notes, 1),
+      scoreField(q, t.tags.join(" "), 1),
+      scoreField(q, t.category, 1)
+    );
     if (s)
       results.push({
         kind: "tool",
@@ -91,7 +106,18 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   }
 
   for (const f of flows) {
-    const s = score(q, f.name, f.description, f.steps.map((step) => step.label).join(" "));
+    // Bolt Performance Optimization: Evaluate title & description first, then iterate steps directly
+    // to avoid allocating new arrays and joining large strings (`f.steps.map(...).join(" ")`).
+    let s = Math.max(scoreField(q, f.name, 3), scoreField(q, f.description, 1));
+    if (s < 100) {
+      for (const step of f.steps) {
+        const stepScore = scoreField(q, step.label, 1);
+        if (stepScore > s) {
+          s = stepScore;
+          if (s === 100) break;
+        }
+      }
+    }
     if (s)
       results.push({
         kind: "flow",
@@ -106,7 +132,18 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   }
 
   for (const c of chats) {
-    const s = score(q, c.title, c.messages.map((m) => m.content).join(" "));
+    // Bolt Performance Optimization: Evaluate title first, then iterate messages directly
+    // to avoid allocating arrays and joining massive chat histories (`c.messages.map(...).join(" ")`).
+    let s = scoreField(q, c.title, 3);
+    if (s < 100) {
+      for (const m of c.messages) {
+        const msgScore = scoreField(q, m.content, 1);
+        if (msgScore > s) {
+          s = msgScore;
+          if (s === 100) break;
+        }
+      }
+    }
     if (s)
       results.push({
         kind: "chat",
