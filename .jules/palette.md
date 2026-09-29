@@ -1,0 +1,3 @@
+## 2025-05-15 - Interactive Cards and Inline Action Feedback
+**Learning:** Interactive cards implemented as `<div onClick>` are inaccessible to keyboard users unless explicitly given `role="button"`, `tabIndex={0}`, `onKeyDown` listeners (Enter/Space), and `focus-visible:ring-2`. Additionally, action buttons inside cards (such as copy) feel significantly more responsive when providing instant transient inline feedback (e.g. 2s "Copied" checkmark state) alongside toast notifications.
+**Action:** When building or auditing interactive card components or icon/action buttons, always pair toast feedback with inline visual button state changes and ensure full keyboard interactivity with focus indicators.
