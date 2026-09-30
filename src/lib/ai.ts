@@ -371,14 +371,17 @@ export async function buildOpenRouterAuthUrl() {
 export async function exchangeOpenRouterCode(code: string): Promise<string> {
   const codeVerifier = localStorage.getItem(VERIFIER_KEY);
   if (!codeVerifier) throw new Error("This connection attempt expired. Start again from Settings.");
-  const res = await fetch("https://openrouter.ai/api/v1/auth/keys", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code, code_verifier: codeVerifier, code_challenge_method: "S256" }),
-  });
-  localStorage.removeItem(VERIFIER_KEY);
-  if (!res.ok) throw new Error("OpenRouter could not complete the connection.");
-  const json = await res.json();
-  if (!json.key) throw new Error("OpenRouter did not return a key.");
-  return json.key as string;
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/auth/keys", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, code_verifier: codeVerifier, code_challenge_method: "S256" }),
+    });
+    if (!res.ok) throw new Error("OpenRouter could not complete the connection.");
+    const json = await res.json();
+    if (!json.key) throw new Error("OpenRouter did not return a key.");
+    return json.key as string;
+  } finally {
+    localStorage.removeItem(VERIFIER_KEY);
+  }
 }
