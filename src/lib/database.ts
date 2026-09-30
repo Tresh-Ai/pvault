@@ -142,8 +142,8 @@ export const dbHelpers = {
     return storage.get<Project>(STORAGE_KEYS.PROJECTS);
   },
 
-  // Migration helper for existing prompts without versions
-  async migratePromptsToVersioning(): Promise<void> {
+  // Migration helper for existing prompts without versions. Returns parsed prompts to avoid redundant LocalStorage reads.
+  async migratePromptsToVersioning(): Promise<Prompt[]> {
     const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
     let hasChanges = false;
     
@@ -164,6 +164,7 @@ export const dbHelpers = {
     if (hasChanges) {
       storage.set(STORAGE_KEYS.PROMPTS, prompts);
     }
+    return prompts;
   },
 
   // Prompts
@@ -290,15 +291,14 @@ export const dbHelpers = {
   },
 
   async getProjectPrompts(projectId: string): Promise<Prompt[]> {
-    // Ensure migration runs first
-    await this.migratePromptsToVersioning();
-    const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    // Bolt Performance Optimization: Reuse the prompts returned by migratePromptsToVersioning
+    // instead of performing a duplicate storage.get<Prompt>() LocalStorage read and JSON parse.
+    const prompts = await this.migratePromptsToVersioning();
     return prompts.filter(p => p.projectId === projectId);
   },
 
   async getAllPrompts(): Promise<Prompt[]> {
-    await this.migratePromptsToVersioning();
-    return storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    return this.migratePromptsToVersioning();
   },
 
   async getAllTools(): Promise<Tool[]> {
