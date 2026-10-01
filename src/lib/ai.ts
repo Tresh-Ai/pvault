@@ -369,6 +369,9 @@ export async function buildOpenRouterAuthUrl() {
 
 /** Exchanges the one-time code for a user-scoped OpenRouter key. */
 export async function exchangeOpenRouterCode(code: string): Promise<string> {
+  if (!code || typeof code !== "string" || !code.trim()) {
+    throw new Error("Invalid authorization code provided.");
+  }
   const codeVerifier = localStorage.getItem(VERIFIER_KEY);
   if (!codeVerifier) throw new Error("This connection attempt expired. Start again from Settings.");
   const res = await fetch("https://openrouter.ai/api/v1/auth/keys", {
