@@ -75,13 +75,36 @@ export function AttachPicker({ open, onOpenChange, prompts, workflows, tools, on
         </DialogHeader>
 
         <div className="px-5 space-y-3">
-          <div className="flex gap-1 p-1 rounded-full bg-secondary">
+          <div
+            role="tablist"
+            aria-label="Attachment categories"
+            className="flex gap-1 p-1 rounded-full bg-secondary"
+            onKeyDown={(e) => {
+              if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                e.preventDefault();
+                const currentIndex = TABS.findIndex((t) => t.key === tab);
+                const nextIndex =
+                  e.key === "ArrowRight"
+                    ? (currentIndex + 1) % TABS.length
+                    : (currentIndex - 1 + TABS.length) % TABS.length;
+                const nextTab = TABS[nextIndex].key;
+                setTab(nextTab);
+                const targetEl = document.getElementById(`attach-tab-${nextTab}`);
+                targetEl?.focus();
+              }
+            }}
+          >
             {TABS.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
+                id={`attach-tab-${key}`}
+                role="tab"
+                aria-selected={tab === key}
+                aria-controls="attach-picker-list"
+                tabIndex={tab === key ? 0 : -1}
                 onClick={() => setTab(key)}
                 className={cn(
-                  "flex-1 h-8 rounded-full text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors",
+                  "flex-1 h-8 rounded-full text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   tab === key ? "bg-background text-foreground shadow-sm" : "text-muted-foreground",
                 )}
               >
@@ -97,7 +120,7 @@ export function AttachPicker({ open, onOpenChange, prompts, workflows, tools, on
           </div>
         </div>
 
-        <div className="max-h-[45vh] overflow-y-auto px-5 pb-5 pt-3 space-y-1.5">
+        <div id="attach-picker-list" role="tabpanel" className="max-h-[45vh] overflow-y-auto px-5 pb-5 pt-3 space-y-1.5">
           {filtered.map((item) => (
             <button
               key={item.id}
