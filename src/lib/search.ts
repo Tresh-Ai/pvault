@@ -16,18 +16,100 @@ export interface SearchResult {
   score: number;
 }
 
-function score(query: string, ...fields: (string | undefined)[]): number {
-  const q = query.trim().toLowerCase();
-  if (!q) return 0;
-  let best = 0;
-  fields.forEach((field, index) => {
-    if (!field) return;
-    const value = field.toLowerCase();
-    const weight = index === 0 ? 3 : 1;
-    if (value === q) best = Math.max(best, 100 * weight);
-    else if (value.startsWith(q)) best = Math.max(best, 60 * weight);
-    else if (value.includes(q)) best = Math.max(best, 30 * weight);
-  });
+/**
+ * Bolt Performance Optimization:
+ * Fast single-field scoring using a pre-normalized query string `q`.
+ */
+function scoreField(q: string, text: string | undefined, weight: number): number {
+  if (!text) return 0;
+  const value = text.toLowerCase();
+  if (value === q) return 100 * weight;
+  if (value.startsWith(q)) return 60 * weight;
+  if (value.includes(q)) return 30 * weight;
+  return 0;
+}
+
+/**
+ * Bolt Performance Optimization:
+ * Lazy score calculation with short-circuiting.
+ * Normalizes query string once per search call rather than per field comparison.
+ * Eliminates array mappings and string concatenations (`tags.join()`).
+ */
+function scoreItem(
+  q: string,
+  primary: string | undefined,
+  secondaryFields?: (string | undefined)[],
+  secondaryArrays?: (string[] | undefined)[],
+): number {
+  const primaryScore = scoreField(q, primary, 3);
+  // Short-circuit: if primary score is exact match (300) or startsWith (180),
+  // secondary fields (max weight-1 score 100) cannot beat or alter primaryScore.
+  if (primaryScore >= 180) return primaryScore;
+
+  let best = primaryScore;
+
+  if (secondaryFields) {
+    for (let i = 0; i < secondaryFields.length; i++) {
+      const s = scoreField(q, secondaryFields[i], 1);
+      if (s > best) {
+        best = s;
+        if (best >= 100) return best;
+      }
+    }
+  }
+
+  if (secondaryArrays) {
+    for (let i = 0; i < secondaryArrays.length; i++) {
+      const arr = secondaryArrays[i];
+      if (!arr) continue;
+      for (let j = 0; j < arr.length; j++) {
+        const s = scoreField(q, arr[j], 1);
+        if (s > best) {
+          best = s;
+          if (best >= 100) return best;
+        }
+      }
+    }
+  }
+
+  return best;
+}
+
+function scoreChat(q: string, chat: Chat): number {
+  const primaryScore = scoreField(q, chat.title, 3);
+  if (primaryScore >= 180) return primaryScore;
+
+  let best = primaryScore;
+  const messages = chat.messages;
+  for (let i = 0; i < messages.length; i++) {
+    const s = scoreField(q, messages[i].content, 1);
+    if (s > best) {
+      best = s;
+      if (best >= 100) break;
+    }
+  }
+  return best;
+}
+
+function scoreFlow(q: string, flow: Workflow): number {
+  const primaryScore = scoreField(q, flow.name, 3);
+  if (primaryScore >= 180) return primaryScore;
+
+  let best = primaryScore;
+  const descScore = scoreField(q, flow.description, 1);
+  if (descScore > best) {
+    best = descScore;
+    if (best >= 100) return best;
+  }
+
+  const steps = flow.steps;
+  for (let i = 0; i < steps.length; i++) {
+    const s = scoreField(q, steps[i].label, 1);
+    if (s > best) {
+      best = s;
+      if (best >= 100) break;
+    }
+  }
   return best;
 }
 
@@ -38,8 +120,8 @@ function excerpt(text: string, length = 70): string {
 
 /** One search across projects, prompts, tools, flows and chats. */
 export async function searchEverything(query: string, limit = 40): Promise<SearchResult[]> {
-  const q = query.trim();
-  if (!q) return [];
+  const qNorm = query.trim().toLowerCase();
+  if (!qNorm) return [];
 
   // Bolt Performance Optimization: Fetch all collections in parallel using single-pass helpers.
   // Replaces O(N) sequential project loop that caused 3N+2 redundant LocalStorage reads & JSON parses.
@@ -56,12 +138,12 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   const results: SearchResult[] = [];
 
   for (const p of projects) {
-    const s = score(q, p.name, p.description, p.tags.join(" "));
+    const s = scoreItem(qNorm, p.name, [p.description], [p.tags]);
     if (s) results.push({ kind: "project", id: p.id, title: p.name, subtitle: p.description, href: `/project/${p.id}`, score: s });
   }
 
   for (const p of prompts) {
-    const s = score(q, p.title, p.content, p.tags.join(" "), p.category);
+    const s = scoreItem(qNorm, p.title, [p.content, p.category], [p.tags]);
     if (s)
       results.push({
         kind: "prompt",
@@ -76,7 +158,7 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   }
 
   for (const t of tools) {
-    const s = score(q, t.name, t.notes, t.tags.join(" "), t.category);
+    const s = scoreItem(qNorm, t.name, [t.notes, t.category, t.url], [t.tags]);
     if (s)
       results.push({
         kind: "tool",
@@ -91,7 +173,7 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   }
 
   for (const f of flows) {
-    const s = score(q, f.name, f.description, f.steps.map((step) => step.label).join(" "));
+    const s = scoreFlow(qNorm, f);
     if (s)
       results.push({
         kind: "flow",
@@ -106,7 +188,7 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   }
 
   for (const c of chats) {
-    const s = score(q, c.title, c.messages.map((m) => m.content).join(" "));
+    const s = scoreChat(qNorm, c);
     if (s)
       results.push({
         kind: "chat",
