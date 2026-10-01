@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Prompt } from "@/lib/database";
@@ -14,7 +15,12 @@ interface PromptCardProps {
   onIncrementUsage: () => void;
 }
 
-export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncrementUsage }: PromptCardProps) {
+/**
+ * Bolt Performance Optimization:
+ * Memoize `PromptCard` to prevent re-rendering all prompt items in lists
+ * (e.g., in `ProjectView` and `Library`) when parent state updates or when searching/filtering.
+ */
+export const PromptCard = memo(function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncrementUsage }: PromptCardProps) {
   const { toast } = useToast();
 
   const handleCopy = async (e: React.MouseEvent) => {
@@ -115,4 +121,4 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
       </div>
     </div>
   );
-}
+});
