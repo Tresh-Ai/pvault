@@ -352,13 +352,10 @@ export function PromptEditor() {
             onClick={() => navigate(-1)}
             className="shrink-0 h-8 px-2"
             aria-label="Go back"
+            title="Go back"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-
-
-
-
 
           <div className="flex-1 flex justify-center text-xs text-muted-foreground">
             {saveState === 'saving' && (
@@ -376,7 +373,9 @@ export function PromptEditor() {
                 size="sm"
                 onClick={() => setIsPreview(v => !v)}
                 className="h-8 px-2"
-                aria-label={isPreview ? "Edit" : "Preview"}
+                aria-label={isPreview ? "Edit markdown" : "Preview markdown"}
+                aria-pressed={isPreview}
+                title={isPreview ? "Edit markdown" : "Preview markdown"}
               >
                 {isPreview ? <PenLine className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
@@ -386,12 +385,21 @@ export function PromptEditor() {
               size="sm"
               onClick={() => { markDirty(); setIsFavorite(v => !v); }}
               className={cn("h-8 px-2", isFavorite && "text-primary")}
-              aria-label="Favorite"
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              aria-pressed={isFavorite}
+              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
             >
               <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
             </Button>
             {promptId && (
-              <Button variant="ghost" size="sm" onClick={handleViewVersions} className="h-8 px-2" aria-label="Version history">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleViewVersions}
+                className="h-8 px-2"
+                aria-label="Version history"
+                title="Version history"
+              >
                 <History className="h-4 w-4" />
               </Button>
             )}
