@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Project, Prompt, Tool, dbHelpers } from "@/lib/database";
 import { PromptCard } from "@/components/prompt-card";
@@ -258,8 +258,9 @@ export default function ProjectView() {
   };
 
 
-  // Get filter options
-  const getPromptFilterOptions = () => {
+  // Bolt Performance Optimization: Memoize filter options calculation.
+  // Replaces O(N*M) redundant array iterations on every component re-render (e.g., typing search queries).
+  const promptFilterOptions = useMemo(() => {
     const categories = [...new Set(prompts.map(p => p.category))];
     const tags = [...new Set(prompts.flatMap(p => p.tags))];
     
@@ -269,9 +270,9 @@ export default function ProjectView() {
       { id: 'favorite', label: 'Favorites', count: prompts.filter(p => p.isFavorite).length },
       { id: 'most-used', label: 'Most Used', count: prompts.filter(p => p.usageCount > 0).length }
     ].filter(option => option.count > 0);
-  };
+  }, [prompts]);
 
-  const getToolFilterOptions = () => {
+  const toolFilterOptions = useMemo(() => {
     const categories = [...new Set(tools.map(t => t.category))];
     const tags = [...new Set(tools.flatMap(t => t.tags))];
     
@@ -279,7 +280,7 @@ export default function ProjectView() {
       ...categories.map(cat => ({ id: `category:${cat}`, label: `Category: ${cat}`, count: tools.filter(t => t.category === cat).length })),
       ...tags.map(tag => ({ id: `tag:${tag}`, label: `#${tag}`, count: tools.filter(t => t.tags.includes(tag)).length }))
     ].filter(option => option.count > 0);
-  };
+  }, [tools]);
 
   const filteredPrompts = prompts.filter(prompt => {
     const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -381,7 +382,7 @@ export default function ProjectView() {
               />
               {(activeTab === "prompts" || activeTab === "tools") && <FilterDropdown
                 title={`Filter ${activeTab}`}
-                options={activeTab === "prompts" ? getPromptFilterOptions() : getToolFilterOptions()}
+                options={activeTab === "prompts" ? promptFilterOptions : toolFilterOptions}
                 selectedFilters={selectedFilters}
                 onFiltersChange={setSelectedFilters}
               />}
