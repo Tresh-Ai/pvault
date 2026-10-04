@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Project, dbHelpers } from "@/lib/database";
 import { ProjectCard } from "@/components/project-card";
@@ -38,17 +38,28 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
 
   const loadProjects = async () => {
     try {
-      const allProjects = await dbHelpers.getAllProjects();
+      // Bolt Performance Optimization: Fetch projects, prompts, and tools in a single parallel batch.
+      // Replaces sequential per-project loop that made 2N redundant LocalStorage reads and JSON parses.
+      const [allProjects, allPrompts, allTools] = await Promise.all([
+        dbHelpers.getAllProjects(),
+        dbHelpers.getAllPrompts(),
+        dbHelpers.getAllTools(),
+      ]);
+
       // Sort by updatedAt in reverse order
       allProjects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       setProjects(allProjects);
-      
-      // Load counts for each project
+
+      // Aggregate prompt and tool counts per project in memory in a single pass
       const counts: Record<string, { prompts: number; tools: number }> = {};
       for (const project of allProjects) {
-        const projectPrompts = await dbHelpers.getProjectPrompts(project.id);
-        const projectTools = await dbHelpers.getProjectTools(project.id);
-        counts[project.id] = { prompts: projectPrompts.length, tools: projectTools.length };
+        counts[project.id] = { prompts: 0, tools: 0 };
+      }
+      for (const prompt of allPrompts) {
+        if (counts[prompt.projectId]) counts[prompt.projectId].prompts++;
+      }
+      for (const tool of allTools) {
+        if (counts[tool.projectId]) counts[tool.projectId].tools++;
       }
       setProjectCounts(counts);
     } catch (error) {
@@ -154,11 +165,15 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
     }
   };
 
-  const filteredProjects = projects.filter(project =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredProjects = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    if (!q) return projects;
+    return projects.filter(project =>
+      project.name.toLowerCase().includes(q) ||
+      project.description?.toLowerCase().includes(q) ||
+      project.tags.some(tag => tag.toLowerCase().includes(q))
+    );
+  }, [projects, searchQuery]);
 
   return (
     <div className="min-h-screen bg-background">
