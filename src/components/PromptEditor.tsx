@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { extractVariables, fillVariables, humanizeVariable } from "@/lib/variables";
 import { isAIReady } from "@/lib/ai";
 import { improvePrompt } from "@/lib/prompt-coach";
-import { cn } from "@/lib/utils";
+import { cn, openSafeUrl } from "@/lib/utils";
 
 const PROMPT_CATEGORIES = ["Writing", "Code", "Outreach", "Research", "Creative", "Analysis", "Other"];
 type Format = 'text' | 'json' | 'markdown';
@@ -298,7 +298,7 @@ export function PromptEditor() {
       /* clipboard may be blocked - the URL still carries the prompt */
     }
     if (promptId) dbHelpers.incrementPromptUsage(promptId).catch(() => {});
-    window.open(target.url(text), "_blank", "noopener,noreferrer");
+    openSafeUrl(target.url(text));
     if (target.copy) toast({ title: `Copied - paste it into ${target.name}` });
   };
 
