@@ -60,7 +60,11 @@ export function ChatComposer({
             >
               <span className="text-primary font-medium capitalize">{a.kind === "workflow" ? "flow" : a.kind}</span>
               <span className="truncate text-muted-foreground">{a.label}</span>
-              <button onClick={() => onRemoveAttachment(a.id)} aria-label={`Remove ${a.label}`} className="shrink-0">
+              <button
+                onClick={() => onRemoveAttachment(a.id)}
+                aria-label={`Remove ${a.label}`}
+                className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              >
                 <X className="h-3 w-3 text-muted-foreground" />
               </button>
             </span>
@@ -84,7 +88,7 @@ export function ChatComposer({
           onClick={onAttach}
           aria-label="Add a prompt, flow or tool"
           title="Add a prompt, flow or tool"
-          className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
         >
           <Plus className="h-[18px] w-[18px]" />
         </button>
@@ -93,7 +97,7 @@ export function ChatComposer({
           onClick={onExpand}
           aria-label="Open in full editor"
           title="Open in full editor"
-          className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
         >
           <Maximize2 className="h-4 w-4" />
         </button>
@@ -103,7 +107,7 @@ export function ChatComposer({
             type="button"
             onClick={onStop}
             aria-label="Stop"
-            className="h-8 w-8 rounded-full bg-foreground text-background flex items-center justify-center"
+            className="h-8 w-8 rounded-full bg-foreground text-background flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
           >
             <Square className="h-3 w-3 fill-current" />
           </button>
@@ -114,7 +118,7 @@ export function ChatComposer({
             disabled={!canSend}
             aria-label="Send"
             className={cn(
-              "h-8 w-8 rounded-full flex items-center justify-center transition-colors",
+              "h-8 w-8 rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
               canSend ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
             )}
           >

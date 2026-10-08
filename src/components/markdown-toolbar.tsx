@@ -33,7 +33,7 @@ const actions: { icon: typeof Bold; label: string; action: Action }[] = [
 ];
 
 const btn =
-  "shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition-colors disabled:opacity-30 disabled:hover:bg-transparent";
+  "shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition-colors disabled:opacity-30 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1";
 
 export function MarkdownToolbar({
   textareaRef,
