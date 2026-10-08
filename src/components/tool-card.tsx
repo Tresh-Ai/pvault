@@ -15,7 +15,8 @@ export function ToolCard({ tool, onEdit, onDelete, onIncrementUsage }: ToolCardP
   const handleOpenLink = () => {
     if (tool.url) {
       onIncrementUsage();
-      window.open(tool.url, '_blank');
+      // Security: Use noopener,noreferrer to prevent window.opener hijacking / reverse tabnabbing
+      window.open(tool.url, '_blank', 'noopener,noreferrer');
     }
   };
 
