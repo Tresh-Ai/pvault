@@ -1,0 +1,3 @@
+## 2025-10-09 - Interactive Card Accessibility Pattern
+**Learning:** Custom clickable card components (e.g. PromptCard) rendered as `<div>`s need `role="button"`, `tabIndex={0}`, keyboard navigation handling (`onKeyDown` for Enter/Space), and `focus-visible` ring styling so keyboard and screen reader users can navigate and activate them. When handling keyboard events on a parent card, verify `e.target === e.currentTarget` so nested interactive controls (buttons, menus) are not unintentionally overridden.
+**Action:** Always include keyboard activation, target checks, and focus-visible indicators when converting non-button cards to interactive elements.
