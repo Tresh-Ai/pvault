@@ -3,12 +3,12 @@
  * Parsing and filling stay purely in-memory, nothing is persisted here.
  */
 
-const TOKEN = /\{\{\s*([\w.-]+)\s*\}\}/g;
-
 /** Unique variable names, in the order they first appear. */
 export function extractVariables(content: string): string[] {
+  if (!content || !content.includes("{{")) return [];
   const found: string[] = [];
-  for (const match of content.matchAll(TOKEN)) {
+  const matches = content.matchAll(/\{\{\s*([\w.-]+)\s*\}\}/g);
+  for (const match of matches) {
     const name = match[1];
     if (!found.includes(name)) found.push(name);
   }
@@ -17,15 +17,16 @@ export function extractVariables(content: string): string[] {
 
 /** Replace every {{name}} with its value. Unfilled variables keep their placeholder. */
 export function fillVariables(content: string, values: Record<string, string>): string {
-  return content.replace(TOKEN, (whole, name: string) => {
+  if (!content || !content.includes("{{")) return content;
+  return content.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (whole, name: string) => {
     const value = values[name];
     return value && value.trim() ? value : whole;
   });
 }
 
 export function hasVariables(content: string): boolean {
-  TOKEN.lastIndex = 0;
-  return TOKEN.test(content);
+  if (!content || !content.includes("{{")) return false;
+  return /\{\{\s*([\w.-]+)\s*\}\}/.test(content);
 }
 
 /** Turn "campaign_name" into "Campaign name" for form labels. */
