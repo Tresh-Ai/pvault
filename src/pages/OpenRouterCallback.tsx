@@ -23,7 +23,13 @@ export default function OpenRouterCallback() {
         saveAISettings({ provider: "openrouter", apiKey: key });
         setState("done");
         setMessage("OpenRouter connected. Pick a model next.");
-        window.opener?.postMessage({ type: "pvault:openrouter-connected" }, window.location.origin);
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.postMessage({ type: "pvault:openrouter-connected" }, window.location.origin);
+          }
+        } catch (error) {
+          console.error("Could not postMessage to opener:", error);
+        }
         if (window.opener) setTimeout(() => window.close(), 900);
       })
       .catch((error: Error) => {
