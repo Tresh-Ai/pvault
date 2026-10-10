@@ -1,6 +1,7 @@
 import { RefObject } from "react";
 import { Bold, Italic, Link2, Code, ListChecks, List, Heading2, Quote, Undo2, Redo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 interface MarkdownToolbarProps {
   textareaRef: RefObject<HTMLTextAreaElement>;
@@ -83,56 +84,69 @@ export function MarkdownToolbar({
   };
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-0.5 overflow-x-auto overscroll-x-contain no-scrollbar rounded-full bg-secondary/60 p-1",
-        className
-      )}
-      role="toolbar"
-      aria-label="Editor tools"
-    >
-      {history && (
-        <>
-          <button
-            type="button"
-            title="Undo (Ctrl/Cmd + Z)"
-            aria-label="Undo"
-            disabled={!history.canUndo}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={history.undo}
-            className={btn}
-          >
-            <Undo2 className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            title="Redo (Ctrl/Cmd + Shift + Z)"
-            aria-label="Redo"
-            disabled={!history.canRedo}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={history.redo}
-            className={btn}
-          >
-            <Redo2 className="h-4 w-4" />
-          </button>
-          {showFormatting && <div className="shrink-0 w-px h-5 bg-border mx-1" />}
-        </>
-      )}
+    <TooltipProvider delayDuration={300}>
+      <div
+        className={cn(
+          "flex items-center gap-0.5 overflow-x-auto overscroll-x-contain no-scrollbar rounded-full bg-secondary/60 p-1",
+          className
+        )}
+        role="toolbar"
+        aria-label="Editor tools"
+      >
+        {history && (
+          <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Undo"
+                  disabled={!history.canUndo}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={history.undo}
+                  className={btn}
+                >
+                  <Undo2 className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">Undo (Ctrl/Cmd + Z)</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Redo"
+                  disabled={!history.canRedo}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={history.redo}
+                  className={btn}
+                >
+                  <Redo2 className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">Redo (Ctrl/Cmd + Shift + Z)</TooltipContent>
+            </Tooltip>
+            {showFormatting && <div className="shrink-0 w-px h-5 bg-border mx-1" />}
+          </>
+        )}
 
-      {showFormatting &&
-        actions.map(({ icon: Icon, label, action }) => (
-          <button
-            key={label}
-            type="button"
-            title={label}
-            aria-label={label}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => apply(action)}
-            className={btn}
-          >
-            <Icon className="h-4 w-4" />
-          </button>
-        ))}
-    </div>
+        {showFormatting &&
+          actions.map(({ icon: Icon, label, action }) => (
+            <Tooltip key={label}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={label}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => apply(action)}
+                  className={btn}
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">{label}</TooltipContent>
+            </Tooltip>
+          ))}
+      </div>
+    </TooltipProvider>
   );
 }
