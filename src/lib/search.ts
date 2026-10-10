@@ -16,19 +16,38 @@ export interface SearchResult {
   score: number;
 }
 
-function score(query: string, ...fields: (string | undefined)[]): number {
-  const q = query.trim().toLowerCase();
-  if (!q) return 0;
+// Bolt Performance Optimization: Single-pass query normalization & zero-allocation score matching.
+// Pre-lowercases search query once and avoids allocating intermediate message/step arrays on every search keystroke.
+function score(qLower: string, ...fields: (string | undefined)[]): number {
+  if (!qLower) return 0;
   let best = 0;
-  fields.forEach((field, index) => {
-    if (!field) return;
+  for (let index = 0; index < fields.length; index++) {
+    const field = fields[index];
+    if (!field) continue;
     const value = field.toLowerCase();
     const weight = index === 0 ? 3 : 1;
-    if (value === q) best = Math.max(best, 100 * weight);
-    else if (value.startsWith(q)) best = Math.max(best, 60 * weight);
-    else if (value.includes(q)) best = Math.max(best, 30 * weight);
-  });
+    if (value === qLower) best = Math.max(best, 100 * weight);
+    else if (value.startsWith(qLower)) best = Math.max(best, 60 * weight);
+    else if (value.includes(qLower)) best = Math.max(best, 30 * weight);
+  }
   return best;
+}
+
+function scoreChat(qLower: string, chat: Chat): number {
+  const titleScore = score(qLower, chat.title);
+  // Early return if title matches exact (300) or startsWith (180), which beats max possible message score (100)
+  if (titleScore >= 180) return titleScore;
+
+  let maxMsgScore = 0;
+  for (let i = 0; i < chat.messages.length; i++) {
+    const content = chat.messages[i].content;
+    if (!content) continue;
+    const val = content.toLowerCase();
+    if (val === qLower) { maxMsgScore = 100; break; }
+    if (val.startsWith(qLower)) maxMsgScore = Math.max(maxMsgScore, 60);
+    else if (val.includes(qLower)) maxMsgScore = Math.max(maxMsgScore, 30);
+  }
+  return Math.max(titleScore, maxMsgScore);
 }
 
 function excerpt(text: string, length = 70): string {
@@ -40,6 +59,7 @@ function excerpt(text: string, length = 70): string {
 export async function searchEverything(query: string, limit = 40): Promise<SearchResult[]> {
   const q = query.trim();
   if (!q) return [];
+  const qLower = q.toLowerCase();
 
   // Bolt Performance Optimization: Fetch all collections in parallel using single-pass helpers.
   // Replaces O(N) sequential project loop that caused 3N+2 redundant LocalStorage reads & JSON parses.
@@ -56,12 +76,12 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   const results: SearchResult[] = [];
 
   for (const p of projects) {
-    const s = score(q, p.name, p.description, p.tags.join(" "));
+    const s = score(qLower, p.name, p.description, p.tags.join(" "));
     if (s) results.push({ kind: "project", id: p.id, title: p.name, subtitle: p.description, href: `/project/${p.id}`, score: s });
   }
 
   for (const p of prompts) {
-    const s = score(q, p.title, p.content, p.tags.join(" "), p.category);
+    const s = score(qLower, p.title, p.content, p.tags.join(" "), p.category);
     if (s)
       results.push({
         kind: "prompt",
@@ -76,7 +96,7 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   }
 
   for (const t of tools) {
-    const s = score(q, t.name, t.notes, t.tags.join(" "), t.category);
+    const s = score(qLower, t.name, t.notes, t.tags.join(" "), t.category);
     if (s)
       results.push({
         kind: "tool",
@@ -91,7 +111,8 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   }
 
   for (const f of flows) {
-    const s = score(q, f.name, f.description, f.steps.map((step) => step.label).join(" "));
+    const stepsText = f.steps.length > 0 ? f.steps.map((step) => step.label).join(" ") : undefined;
+    const s = score(qLower, f.name, f.description, stepsText);
     if (s)
       results.push({
         kind: "flow",
@@ -106,7 +127,7 @@ export async function searchEverything(query: string, limit = 40): Promise<Searc
   }
 
   for (const c of chats) {
-    const s = score(q, c.title, c.messages.map((m) => m.content).join(" "));
+    const s = scoreChat(qLower, c);
     if (s)
       results.push({
         kind: "chat",
