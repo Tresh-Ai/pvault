@@ -66,14 +66,15 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
             variant="ghost"
             size="sm"
             onClick={onToggleFavorite}
-            aria-label="Toggle favorite"
+            aria-label={prompt.isFavorite ? "Remove from favorites" : "Add to favorites"}
+            title={prompt.isFavorite ? "Remove from favorites" : "Add to favorites"}
             className={cn("h-8 w-8 p-0", prompt.isFavorite ? "text-primary" : "text-muted-foreground")}
           >
             <Star className={cn("h-4 w-4", prompt.isFavorite && "fill-current")} />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground" aria-label="Prompt menu">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground" aria-label="More options" title="More options">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -104,11 +105,25 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
           )}
         </div>
         <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <Button onClick={handleCopy} variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs">
+          <Button
+            onClick={handleCopy}
+            variant="ghost"
+            size="sm"
+            className="h-8 rounded-full px-3 text-xs"
+            aria-label="Copy prompt content"
+            title="Copy prompt content"
+          >
             <Copy className="h-3.5 w-3.5 mr-1" />
             Copy
           </Button>
-          <Button onClick={handleExport} variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Export prompt">
+          <Button
+            onClick={handleExport}
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            aria-label="Export prompt"
+            title="Export prompt"
+          >
             <Download className="h-3.5 w-3.5" />
           </Button>
         </div>
