@@ -38,17 +38,32 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
 
   const loadProjects = async () => {
     try {
-      const allProjects = await dbHelpers.getAllProjects();
+      // Bolt Performance Optimization: Fetch all collections concurrently in parallel.
+      // Replaces sequential per-project loop that caused 2N+1 LocalStorage reads and JSON parses.
+      const [allProjects, allPrompts, allTools] = await Promise.all([
+        dbHelpers.getAllProjects(),
+        dbHelpers.getAllPrompts(),
+        dbHelpers.getAllTools(),
+      ]);
+
       // Sort by updatedAt in reverse order
       allProjects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       setProjects(allProjects);
       
-      // Load counts for each project
+      // Compute prompt and tool counts for each project in a single in-memory pass
       const counts: Record<string, { prompts: number; tools: number }> = {};
       for (const project of allProjects) {
-        const projectPrompts = await dbHelpers.getProjectPrompts(project.id);
-        const projectTools = await dbHelpers.getProjectTools(project.id);
-        counts[project.id] = { prompts: projectPrompts.length, tools: projectTools.length };
+        counts[project.id] = { prompts: 0, tools: 0 };
+      }
+      for (const prompt of allPrompts) {
+        if (counts[prompt.projectId]) {
+          counts[prompt.projectId].prompts++;
+        }
+      }
+      for (const tool of allTools) {
+        if (counts[tool.projectId]) {
+          counts[tool.projectId].tools++;
+        }
       }
       setProjectCounts(counts);
     } catch (error) {
