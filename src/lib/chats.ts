@@ -37,7 +37,9 @@ function read(): Chat[] {
     const raw = localStorage.getItem(KEY);
     if (!raw) return [];
     return JSON.parse(raw, (_k, v) =>
-      typeof v === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v) ? new Date(v) : v,
+      typeof v === "string" && v.length >= 19 && v.length <= 28 && v.charCodeAt(10) === 84 && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v)
+        ? new Date(v)
+        : v,
     ) as Chat[];
   } catch {
     return [];
