@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Project, dbHelpers } from "@/lib/database";
 import { ProjectCard } from "@/components/project-card";
@@ -38,17 +38,32 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
 
   const loadProjects = async () => {
     try {
-      const allProjects = await dbHelpers.getAllProjects();
+      // Bolt Performance Optimization: Fetch all projects, prompts, and tools in parallel.
+      // Replaces O(N) sequential project loop that caused 2N+1 redundant LocalStorage reads & JSON parses.
+      const [allProjects, allPrompts, allTools] = await Promise.all([
+        dbHelpers.getAllProjects(),
+        dbHelpers.getAllPrompts(),
+        dbHelpers.getAllTools(),
+      ]);
+
       // Sort by updatedAt in reverse order
       allProjects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       setProjects(allProjects);
-      
-      // Load counts for each project
+
+      // Single-pass counting for project prompts and tools (O(N + P + T))
       const counts: Record<string, { prompts: number; tools: number }> = {};
       for (const project of allProjects) {
-        const projectPrompts = await dbHelpers.getProjectPrompts(project.id);
-        const projectTools = await dbHelpers.getProjectTools(project.id);
-        counts[project.id] = { prompts: projectPrompts.length, tools: projectTools.length };
+        counts[project.id] = { prompts: 0, tools: 0 };
+      }
+      for (const prompt of allPrompts) {
+        if (counts[prompt.projectId]) {
+          counts[prompt.projectId].prompts += 1;
+        }
+      }
+      for (const tool of allTools) {
+        if (counts[tool.projectId]) {
+          counts[tool.projectId].tools += 1;
+        }
       }
       setProjectCounts(counts);
     } catch (error) {
@@ -154,11 +169,15 @@ export function ProjectsList({ onProjectSelect, onSettingsClick }: ProjectsList 
     }
   };
 
-  const filteredProjects = projects.filter(project =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredProjects = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    return projects.filter(
+      (project) =>
+        project.name.toLowerCase().includes(q) ||
+        project.description?.toLowerCase().includes(q) ||
+        project.tags.some((tag) => tag.toLowerCase().includes(q)),
+    );
+  }, [projects, searchQuery]);
 
   return (
     <div className="min-h-screen bg-background">
