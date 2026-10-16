@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Project, Prompt, Tool, dbHelpers } from "@/lib/database";
 import { PromptCard } from "@/components/prompt-card";
@@ -258,28 +258,61 @@ export default function ProjectView() {
   };
 
 
-  // Get filter options
-  const getPromptFilterOptions = () => {
-    const categories = [...new Set(prompts.map(p => p.category))];
-    const tags = [...new Set(prompts.flatMap(p => p.tags))];
-    
-    return [
-      ...categories.map(cat => ({ id: `category:${cat}`, label: `Category: ${cat}`, count: prompts.filter(p => p.category === cat).length })),
-      ...tags.map(tag => ({ id: `tag:${tag}`, label: `#${tag}`, count: prompts.filter(p => p.tags.includes(tag)).length })),
-      { id: 'favorite', label: 'Favorites', count: prompts.filter(p => p.isFavorite).length },
-      { id: 'most-used', label: 'Most Used', count: prompts.filter(p => p.usageCount > 0).length }
-    ].filter(option => option.count > 0);
-  };
+  // Bolt Performance Optimization: Memoize filter options with single-pass Map aggregation.
+  // Prevents O((C+T)*N) array scans and object re-allocations on every render.
+  const promptFilterOptions = useMemo(() => {
+    const categoryCounts = new Map<string, number>();
+    const tagCounts = new Map<string, number>();
+    let favCount = 0;
+    let usedCount = 0;
 
-  const getToolFilterOptions = () => {
-    const categories = [...new Set(tools.map(t => t.category))];
-    const tags = [...new Set(tools.flatMap(t => t.tags))];
-    
-    return [
-      ...categories.map(cat => ({ id: `category:${cat}`, label: `Category: ${cat}`, count: tools.filter(t => t.category === cat).length })),
-      ...tags.map(tag => ({ id: `tag:${tag}`, label: `#${tag}`, count: tools.filter(t => t.tags.includes(tag)).length }))
-    ].filter(option => option.count > 0);
-  };
+    for (const p of prompts) {
+      if (p.category) {
+        categoryCounts.set(p.category, (categoryCounts.get(p.category) || 0) + 1);
+      }
+      for (const tag of p.tags) {
+        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+      }
+      if (p.isFavorite) favCount++;
+      if (p.usageCount > 0) usedCount++;
+    }
+
+    const options = [];
+    for (const [cat, count] of categoryCounts) {
+      options.push({ id: `category:${cat}`, label: `Category: ${cat}`, count });
+    }
+    for (const [tag, count] of tagCounts) {
+      options.push({ id: `tag:${tag}`, label: `#${tag}`, count });
+    }
+    if (favCount > 0) options.push({ id: "favorite", label: "Favorites", count: favCount });
+    if (usedCount > 0) options.push({ id: "most-used", label: "Most Used", count: usedCount });
+
+    return options;
+  }, [prompts]);
+
+  const toolFilterOptions = useMemo(() => {
+    const categoryCounts = new Map<string, number>();
+    const tagCounts = new Map<string, number>();
+
+    for (const t of tools) {
+      if (t.category) {
+        categoryCounts.set(t.category, (categoryCounts.get(t.category) || 0) + 1);
+      }
+      for (const tag of t.tags) {
+        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+      }
+    }
+
+    const options = [];
+    for (const [cat, count] of categoryCounts) {
+      options.push({ id: `category:${cat}`, label: `Category: ${cat}`, count });
+    }
+    for (const [tag, count] of tagCounts) {
+      options.push({ id: `tag:${tag}`, label: `#${tag}`, count });
+    }
+
+    return options;
+  }, [tools]);
 
   const filteredPrompts = prompts.filter(prompt => {
     const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -381,7 +414,7 @@ export default function ProjectView() {
               />
               {(activeTab === "prompts" || activeTab === "tools") && <FilterDropdown
                 title={`Filter ${activeTab}`}
-                options={activeTab === "prompts" ? getPromptFilterOptions() : getToolFilterOptions()}
+                options={activeTab === "prompts" ? promptFilterOptions : toolFilterOptions}
                 selectedFilters={selectedFilters}
                 onFiltersChange={setSelectedFilters}
               />}
