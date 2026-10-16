@@ -36,8 +36,9 @@ function read(): Chat[] {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return [];
+    // Bolt Performance Optimization: Fast string length & hyphen check before regex testing
     return JSON.parse(raw, (_k, v) =>
-      typeof v === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v) ? new Date(v) : v,
+      typeof v === "string" && v.length >= 19 && v.includes("-") && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v) ? new Date(v) : v,
     ) as Chat[];
   } catch {
     return [];

@@ -81,8 +81,9 @@ const storage = {
     try {
       const data = localStorage.getItem(key);
       return data ? JSON.parse(data, (key, value) => {
-        // Convert ISO date strings back to Date objects
-        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+        // Bolt Performance Optimization: Fast string length & hyphen check before regex testing
+        // Avoids executing expensive regex tests on thousands of non-date JSON properties
+        if (typeof value === 'string' && value.length >= 19 && value.includes('-') && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
           return new Date(value);
         }
         return value;
@@ -143,7 +144,8 @@ export const dbHelpers = {
   },
 
   // Migration helper for existing prompts without versions
-  async migratePromptsToVersioning(): Promise<void> {
+  // Bolt Performance Optimization: Return loaded prompts to eliminate redundant LocalStorage parse
+  async migratePromptsToVersioning(): Promise<Prompt[]> {
     const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
     let hasChanges = false;
     
@@ -164,6 +166,7 @@ export const dbHelpers = {
     if (hasChanges) {
       storage.set(STORAGE_KEYS.PROMPTS, prompts);
     }
+    return prompts;
   },
 
   // Prompts
@@ -290,15 +293,14 @@ export const dbHelpers = {
   },
 
   async getProjectPrompts(projectId: string): Promise<Prompt[]> {
-    // Ensure migration runs first
-    await this.migratePromptsToVersioning();
-    const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    // Bolt Performance Optimization: Use returned prompts array directly to avoid duplicate LocalStorage read
+    const prompts = await this.migratePromptsToVersioning();
     return prompts.filter(p => p.projectId === projectId);
   },
 
   async getAllPrompts(): Promise<Prompt[]> {
-    await this.migratePromptsToVersioning();
-    return storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    // Bolt Performance Optimization: Use returned prompts array directly to avoid duplicate LocalStorage read
+    return this.migratePromptsToVersioning();
   },
 
   async getAllTools(): Promise<Tool[]> {
