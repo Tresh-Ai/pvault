@@ -66,7 +66,8 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
             variant="ghost"
             size="sm"
             onClick={onToggleFavorite}
-            aria-label="Toggle favorite"
+            aria-label={prompt.isFavorite ? "Remove from favorites" : "Add to favorites"}
+            title={prompt.isFavorite ? "Remove from favorites" : "Add to favorites"}
             className={cn("h-8 w-8 p-0", prompt.isFavorite ? "text-primary" : "text-muted-foreground")}
           >
             <Star className={cn("h-4 w-4", prompt.isFavorite && "fill-current")} />
@@ -108,7 +109,7 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
             <Copy className="h-3.5 w-3.5 mr-1" />
             Copy
           </Button>
-          <Button onClick={handleExport} variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Export prompt">
+          <Button onClick={handleExport} variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Export prompt" title="Export prompt">
             <Download className="h-3.5 w-3.5" />
           </Button>
         </div>

@@ -377,6 +377,7 @@ export function PromptEditor() {
                 onClick={() => setIsPreview(v => !v)}
                 className="h-8 px-2"
                 aria-label={isPreview ? "Edit" : "Preview"}
+                title={isPreview ? "Switch to Editor" : "Switch to Preview"}
               >
                 {isPreview ? <PenLine className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
@@ -386,12 +387,20 @@ export function PromptEditor() {
               size="sm"
               onClick={() => { markDirty(); setIsFavorite(v => !v); }}
               className={cn("h-8 px-2", isFavorite && "text-primary")}
-              aria-label="Favorite"
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
             >
               <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
             </Button>
             {promptId && (
-              <Button variant="ghost" size="sm" onClick={handleViewVersions} className="h-8 px-2" aria-label="Version history">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleViewVersions}
+                className="h-8 px-2"
+                aria-label="Version history"
+                title="Version history"
+              >
                 <History className="h-4 w-4" />
               </Button>
             )}
