@@ -1,5 +1,6 @@
 import { RefObject } from "react";
 import { Bold, Italic, Link2, Code, ListChecks, List, Heading2, Quote, Undo2, Redo2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface MarkdownToolbarProps {
@@ -93,45 +94,62 @@ export function MarkdownToolbar({
     >
       {history && (
         <>
-          <button
-            type="button"
-            title="Undo (Ctrl/Cmd + Z)"
-            aria-label="Undo"
-            disabled={!history.canUndo}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={history.undo}
-            className={btn}
-          >
-            <Undo2 className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            title="Redo (Ctrl/Cmd + Shift + Z)"
-            aria-label="Redo"
-            disabled={!history.canRedo}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={history.redo}
-            className={btn}
-          >
-            <Redo2 className="h-4 w-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="Undo"
+                disabled={!history.canUndo}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={history.undo}
+                className={btn}
+              >
+                <Undo2 className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Undo (Ctrl/Cmd + Z)</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="Redo"
+                disabled={!history.canRedo}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={history.redo}
+                className={btn}
+              >
+                <Redo2 className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Redo (Ctrl/Cmd + Shift + Z)</p>
+            </TooltipContent>
+          </Tooltip>
           {showFormatting && <div className="shrink-0 w-px h-5 bg-border mx-1" />}
         </>
       )}
 
       {showFormatting &&
         actions.map(({ icon: Icon, label, action }) => (
-          <button
-            key={label}
-            type="button"
-            title={label}
-            aria-label={label}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => apply(action)}
-            className={btn}
-          >
-            <Icon className="h-4 w-4" />
-          </button>
+          <Tooltip key={label}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={label}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => apply(action)}
+                className={btn}
+              >
+                <Icon className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>{label}</p>
+            </TooltipContent>
+          </Tooltip>
         ))}
     </div>
   );
