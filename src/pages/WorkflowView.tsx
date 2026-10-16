@@ -31,7 +31,7 @@ import {
   Pencil,
   Sparkle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, safeOpenExternalUrl } from "@/lib/utils";
 
 export default function WorkflowView() {
   const { projectId, workflowId } = useParams<{ projectId: string; workflowId: string }>();
@@ -122,8 +122,9 @@ export default function WorkflowView() {
   const openTool = async (step: WorkflowStep) => {
     const tool = step.refId ? toolMap.get(step.refId) : undefined;
     if (tool?.url) {
-      await dbHelpers.incrementToolUsage(tool.id);
-      window.open(tool.url, "_blank");
+      if (safeOpenExternalUrl(tool.url)) {
+        await dbHelpers.incrementToolUsage(tool.id);
+      }
     }
     setDone((d) => ({ ...d, [step.id]: true }));
   };
