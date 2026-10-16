@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Prompt } from "@/lib/database";
-import { Copy, Star, MoreVertical, Download, Hash, Pencil, Trash2 } from "lucide-react";
+import { Copy, Check, Star, MoreVertical, Download, Hash, Pencil, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -16,12 +17,15 @@ interface PromptCardProps {
 
 export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncrementUsage }: PromptCardProps) {
   const { toast } = useToast();
+  const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(prompt.content);
       onIncrementUsage();
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
       toast({ title: "Copied", description: "Prompt copied to clipboard." });
     } catch {
       toast({ title: "Copy failed", variant: "destructive" });
@@ -104,9 +108,23 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
           )}
         </div>
         <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <Button onClick={handleCopy} variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs">
-            <Copy className="h-3.5 w-3.5 mr-1" />
-            Copy
+          <Button
+            onClick={handleCopy}
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-8 rounded-full px-3 text-xs transition-colors",
+              isCopied && "text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 hover:bg-emerald-500/20"
+            )}
+            aria-label={isCopied ? "Prompt copied to clipboard" : "Copy prompt text"}
+            aria-live="polite"
+          >
+            {isCopied ? (
+              <Check className="h-3.5 w-3.5 mr-1" />
+            ) : (
+              <Copy className="h-3.5 w-3.5 mr-1" />
+            )}
+            {isCopied ? "Copied" : "Copy"}
           </Button>
           <Button onClick={handleExport} variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Export prompt">
             <Download className="h-3.5 w-3.5" />
