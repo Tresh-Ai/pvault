@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Tool } from "@/lib/database";
 import { ExternalLink, MoreVertical, Wrench } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { sanitizeUrl } from "@/lib/utils";
 
 interface ToolCardProps {
   tool: Tool;
@@ -13,9 +14,10 @@ interface ToolCardProps {
 
 export function ToolCard({ tool, onEdit, onDelete, onIncrementUsage }: ToolCardProps) {
   const handleOpenLink = () => {
-    if (tool.url) {
+    const safeUrl = sanitizeUrl(tool.url);
+    if (safeUrl) {
       onIncrementUsage();
-      window.open(tool.url, '_blank');
+      window.open(safeUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
