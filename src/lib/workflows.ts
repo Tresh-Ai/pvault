@@ -23,13 +23,15 @@ export interface Workflow {
 }
 
 const KEY = "pvault_workflows";
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 
 function read(): Workflow[] {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return [];
+    // Bolt Performance Optimization: Fast string pre-check before regex evaluation.
     return JSON.parse(raw, (_k, v) =>
-      typeof v === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v) ? new Date(v) : v,
+      typeof v === "string" && v.length >= 19 && v.length <= 30 && v.includes("T") && ISO_DATE_REGEX.test(v) ? new Date(v) : v,
     ) as Workflow[];
   } catch {
     return [];

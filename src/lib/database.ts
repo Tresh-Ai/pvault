@@ -75,14 +75,17 @@ const STORAGE_KEYS = {
   SETTINGS: 'pvault_settings'
 };
 
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+
 // LocalStorage helpers
 const storage = {
   get<T>(key: string): T[] {
     try {
       const data = localStorage.getItem(key);
-      return data ? JSON.parse(data, (key, value) => {
-        // Convert ISO date strings back to Date objects
-        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+      return data ? JSON.parse(data, (_key, value) => {
+        // Bolt Performance Optimization: Fast string pre-check before regex evaluation.
+        // Skips regex on non-date strings, avoiding thousands of regex tests during JSON parse.
+        if (typeof value === 'string' && value.length >= 19 && value.length <= 30 && value.includes('T') && ISO_DATE_REGEX.test(value)) {
           return new Date(value);
         }
         return value;
@@ -143,7 +146,7 @@ export const dbHelpers = {
   },
 
   // Migration helper for existing prompts without versions
-  async migratePromptsToVersioning(): Promise<void> {
+  async migratePromptsToVersioning(): Promise<Prompt[]> {
     const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
     let hasChanges = false;
     
@@ -164,6 +167,7 @@ export const dbHelpers = {
     if (hasChanges) {
       storage.set(STORAGE_KEYS.PROMPTS, prompts);
     }
+    return prompts;
   },
 
   // Prompts
@@ -290,15 +294,14 @@ export const dbHelpers = {
   },
 
   async getProjectPrompts(projectId: string): Promise<Prompt[]> {
-    // Ensure migration runs first
-    await this.migratePromptsToVersioning();
-    const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    // Bolt Performance Optimization: Reuse array returned by migratePromptsToVersioning
+    // to eliminate redundant second LocalStorage read and JSON parse pass.
+    const prompts = await this.migratePromptsToVersioning();
     return prompts.filter(p => p.projectId === projectId);
   },
 
   async getAllPrompts(): Promise<Prompt[]> {
-    await this.migratePromptsToVersioning();
-    return storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    return this.migratePromptsToVersioning();
   },
 
   async getAllTools(): Promise<Tool[]> {
