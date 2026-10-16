@@ -144,26 +144,7 @@ export const dbHelpers = {
 
   // Migration helper for existing prompts without versions
   async migratePromptsToVersioning(): Promise<void> {
-    const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
-    let hasChanges = false;
-    
-    prompts.forEach(prompt => {
-      if (!prompt.versions || prompt.versions.length === 0) {
-        // Create initial version from current content
-        const initialVersion: PromptVersion = {
-          versionId: uuidv4(),
-          timestamp: prompt.createdAt || new Date(),
-          content: prompt.content,
-          title: prompt.title,
-        };
-        prompt.versions = [initialVersion];
-        hasChanges = true;
-      }
-    });
-    
-    if (hasChanges) {
-      storage.set(STORAGE_KEYS.PROMPTS, prompts);
-    }
+    await this.getAllPrompts();
   },
 
   // Prompts
@@ -290,15 +271,34 @@ export const dbHelpers = {
   },
 
   async getProjectPrompts(projectId: string): Promise<Prompt[]> {
-    // Ensure migration runs first
-    await this.migratePromptsToVersioning();
-    const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    const prompts = await this.getAllPrompts();
     return prompts.filter(p => p.projectId === projectId);
   },
 
   async getAllPrompts(): Promise<Prompt[]> {
-    await this.migratePromptsToVersioning();
-    return storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    // Bolt Optimization: Perform versioning check in a single storage pass to avoid redundant double
+    // LocalStorage reads and JSON parsing on every prompt fetch.
+    const prompts = storage.get<Prompt>(STORAGE_KEYS.PROMPTS);
+    let hasChanges = false;
+
+    prompts.forEach(prompt => {
+      if (!prompt.versions || prompt.versions.length === 0) {
+        const initialVersion: PromptVersion = {
+          versionId: uuidv4(),
+          timestamp: prompt.createdAt || new Date(),
+          content: prompt.content,
+          title: prompt.title,
+        };
+        prompt.versions = [initialVersion];
+        hasChanges = true;
+      }
+    });
+
+    if (hasChanges) {
+      storage.set(STORAGE_KEYS.PROMPTS, prompts);
+    }
+
+    return prompts;
   },
 
   async getAllTools(): Promise<Tool[]> {
