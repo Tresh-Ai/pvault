@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tool } from "@/lib/database";
+import { sanitizeExternalUrl } from "@/lib/utils";
 import { ExternalLink, MoreVertical, Wrench } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -12,10 +13,12 @@ interface ToolCardProps {
 }
 
 export function ToolCard({ tool, onEdit, onDelete, onIncrementUsage }: ToolCardProps) {
+  const safeUrl = sanitizeExternalUrl(tool.url);
+
   const handleOpenLink = () => {
-    if (tool.url) {
+    if (safeUrl) {
       onIncrementUsage();
-      window.open(tool.url, '_blank');
+      window.open(safeUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -50,7 +53,7 @@ export function ToolCard({ tool, onEdit, onDelete, onIncrementUsage }: ToolCardP
                 <Badge key={tag} variant="outline" className="text-[10px] rounded-full px-2 py-0">{tag}</Badge>
               ))}
             </div>
-            {tool.url && (
+            {safeUrl && (
               <Button onClick={handleOpenLink} variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs shrink-0">
                 Open
                 <ExternalLink className="h-3 w-3 ml-1" />
