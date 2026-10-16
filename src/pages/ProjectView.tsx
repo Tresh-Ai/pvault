@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Project, Prompt, Tool, dbHelpers } from "@/lib/database";
 import { PromptCard } from "@/components/prompt-card";
@@ -258,70 +258,88 @@ export default function ProjectView() {
   };
 
 
-  // Get filter options
-  const getPromptFilterOptions = () => {
-    const categories = [...new Set(prompts.map(p => p.category))];
-    const tags = [...new Set(prompts.flatMap(p => p.tags))];
-    
-    return [
-      ...categories.map(cat => ({ id: `category:${cat}`, label: `Category: ${cat}`, count: prompts.filter(p => p.category === cat).length })),
-      ...tags.map(tag => ({ id: `tag:${tag}`, label: `#${tag}`, count: prompts.filter(p => p.tags.includes(tag)).length })),
-      { id: 'favorite', label: 'Favorites', count: prompts.filter(p => p.isFavorite).length },
-      { id: 'most-used', label: 'Most Used', count: prompts.filter(p => p.usageCount > 0).length }
-    ].filter(option => option.count > 0);
-  };
+  // Bolt Performance Optimization: Single-pass aggregation & memoization for filter options.
+  // Replaces O(P * (C + T)) multi-pass filter calculations that ran on every render.
+  const promptFilterOptions = useMemo(() => {
+    const catCounts = new Map<string, number>();
+    const tagCounts = new Map<string, number>();
+    let favCount = 0;
+    let usedCount = 0;
 
-  const getToolFilterOptions = () => {
-    const categories = [...new Set(tools.map(t => t.category))];
-    const tags = [...new Set(tools.flatMap(t => t.tags))];
-    
-    return [
-      ...categories.map(cat => ({ id: `category:${cat}`, label: `Category: ${cat}`, count: tools.filter(t => t.category === cat).length })),
-      ...tags.map(tag => ({ id: `tag:${tag}`, label: `#${tag}`, count: tools.filter(t => t.tags.includes(tag)).length }))
-    ].filter(option => option.count > 0);
-  };
+    for (const p of prompts) {
+      if (p.category) catCounts.set(p.category, (catCounts.get(p.category) || 0) + 1);
+      for (const t of p.tags) tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+      if (p.isFavorite) favCount++;
+      if (p.usageCount > 0) usedCount++;
+    }
 
-  const filteredPrompts = prompts.filter(prompt => {
-    const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prompt.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prompt.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    if (!matchesSearch) return false;
-    
-    if (selectedFilters.length === 0) return true;
-    
-    return selectedFilters.some(filter => {
-      if (filter.startsWith('category:')) {
-        return prompt.category === filter.replace('category:', '');
-      } else if (filter.startsWith('tag:')) {
-        return prompt.tags.includes(filter.replace('tag:', ''));
-      } else if (filter === 'favorite') {
-        return prompt.isFavorite;
-      } else if (filter === 'most-used') {
-        return prompt.usageCount > 0;
-      }
-      return false;
+    const options = [
+      ...Array.from(catCounts.entries()).map(([cat, count]) => ({ id: `category:${cat}`, label: `Category: ${cat}`, count })),
+      ...Array.from(tagCounts.entries()).map(([tag, count]) => ({ id: `tag:${tag}`, label: `#${tag}`, count })),
+      { id: 'favorite', label: 'Favorites', count: favCount },
+      { id: 'most-used', label: 'Most Used', count: usedCount },
+    ];
+    return options.filter((o) => o.count > 0);
+  }, [prompts]);
+
+  const toolFilterOptions = useMemo(() => {
+    const catCounts = new Map<string, number>();
+    const tagCounts = new Map<string, number>();
+
+    for (const t of tools) {
+      if (t.category) catCounts.set(t.category, (catCounts.get(t.category) || 0) + 1);
+      for (const tag of t.tags) tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+    }
+
+    const options = [
+      ...Array.from(catCounts.entries()).map(([cat, count]) => ({ id: `category:${cat}`, label: `Category: ${cat}`, count })),
+      ...Array.from(tagCounts.entries()).map(([tag, count]) => ({ id: `tag:${tag}`, label: `#${tag}`, count })),
+    ];
+    return options.filter((o) => o.count > 0);
+  }, [tools]);
+
+  // Bolt Performance Optimization: Memoize filtered items to avoid re-filtering on unrelated state updates.
+  const filteredPrompts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return prompts.filter((prompt) => {
+      const matchesSearch =
+        !query ||
+        prompt.title.toLowerCase().includes(query) ||
+        prompt.content.toLowerCase().includes(query) ||
+        prompt.tags.some((tag) => tag.toLowerCase().includes(query));
+
+      if (!matchesSearch) return false;
+      if (selectedFilters.length === 0) return true;
+
+      return selectedFilters.some((filter) => {
+        if (filter.startsWith('category:')) return prompt.category === filter.slice(9);
+        if (filter.startsWith('tag:')) return prompt.tags.includes(filter.slice(4));
+        if (filter === 'favorite') return prompt.isFavorite;
+        if (filter === 'most-used') return prompt.usageCount > 0;
+        return false;
+      });
     });
-  });
+  }, [prompts, searchQuery, selectedFilters]);
 
-  const filteredTools = tools.filter(tool => {
-    const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.notes?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    if (!matchesSearch) return false;
-    
-    if (selectedFilters.length === 0) return true;
-    
-    return selectedFilters.some(filter => {
-      if (filter.startsWith('category:')) {
-        return tool.category === filter.replace('category:', '');
-      } else if (filter.startsWith('tag:')) {
-        return tool.tags.includes(filter.replace('tag:', ''));
-      }
-      return false;
+  const filteredTools = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return tools.filter((tool) => {
+      const matchesSearch =
+        !query ||
+        tool.name.toLowerCase().includes(query) ||
+        tool.notes?.toLowerCase().includes(query) ||
+        tool.tags.some((tag) => tag.toLowerCase().includes(query));
+
+      if (!matchesSearch) return false;
+      if (selectedFilters.length === 0) return true;
+
+      return selectedFilters.some((filter) => {
+        if (filter.startsWith('category:')) return tool.category === filter.slice(9);
+        if (filter.startsWith('tag:')) return tool.tags.includes(filter.slice(4));
+        return false;
+      });
     });
-  });
+  }, [tools, searchQuery, selectedFilters]);
 
   const tabCount =
     activeTab === "prompts"
@@ -381,7 +399,7 @@ export default function ProjectView() {
               />
               {(activeTab === "prompts" || activeTab === "tools") && <FilterDropdown
                 title={`Filter ${activeTab}`}
-                options={activeTab === "prompts" ? getPromptFilterOptions() : getToolFilterOptions()}
+                options={activeTab === "prompts" ? promptFilterOptions : toolFilterOptions}
                 selectedFilters={selectedFilters}
                 onFiltersChange={setSelectedFilters}
               />}
