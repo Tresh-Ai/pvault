@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Prompt, PromptVersion, dbHelpers } from "@/lib/database";
-import { ArrowLeft, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink, Braces, Wand2 } from "lucide-react";
+import { ArrowLeft, History, Check, Star, Hash, Eye, PenLine, Loader2, Sparkle, ExternalLink, Braces, Wand2, Share2 } from "lucide-react";
+import { SharePromptDialog } from "@/components/share-prompt-dialog";
 import { VariablesDialog } from "@/components/variables-dialog";
 import { MarkdownToolbar } from "@/components/markdown-toolbar";
 import { MarkdownPreview } from "@/components/markdown-preview";
@@ -51,6 +52,7 @@ export function PromptEditor() {
   const [varValues, setVarValues] = useState<Record<string, string>>({});
   const [isVarsOpen, setIsVarsOpen] = useState(false);
   const [improving, setImproving] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const [autosaveInterval, setAutosaveInterval] = useState(1200);
 
@@ -395,6 +397,9 @@ export function PromptEditor() {
                 <History className="h-4 w-4" />
               </Button>
             )}
+            <Button variant="ghost" size="sm" onClick={() => setShareOpen(true)} disabled={!content.trim()} className="h-8 px-2" aria-label="Share prompt">
+              <Share2 className="h-4 w-4" />
+            </Button>
             <Button
               onClick={handleSave}
               disabled={isLoading || !canSave}
@@ -543,6 +548,7 @@ export function PromptEditor() {
         )}
       </div>
 
+      <SharePromptDialog open={shareOpen} onOpenChange={setShareOpen} prompt={{ title, content, category, tags, format }} />
       <VariablesDialog
         open={isVarsOpen}
         onOpenChange={setIsVarsOpen}

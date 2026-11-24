@@ -5,7 +5,7 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { applyTheme } from "@/lib/theme";
 
 /** Routes that must render even before onboarding is finished. */
-const BYPASS = ["/auth", "/auth/callback", "/oauth/openrouter"];
+const BYPASS = ["/auth", "/auth/callback", "/oauth/openrouter", "/share"];
 
 /** Shows onboarding once, then hands over to the app. */
 export function OnboardingGate({ children }: { children: React.ReactNode }) {

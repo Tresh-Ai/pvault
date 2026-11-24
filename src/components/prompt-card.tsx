@@ -1,7 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Prompt } from "@/lib/database";
-import { Copy, Star, MoreVertical, Download, Hash, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Copy, Star, MoreVertical, Download, Hash, Pencil, Trash2, Share2 } from "lucide-react";
+import { SharePromptDialog } from "@/components/share-prompt-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -16,6 +18,7 @@ interface PromptCardProps {
 
 export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncrementUsage }: PromptCardProps) {
   const { toast } = useToast();
+  const [shareOpen, setShareOpen] = useState(false);
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -81,6 +84,9 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
               <DropdownMenuItem onClick={onEdit}>
                 <Pencil className="h-4 w-4 mr-2" /> Edit
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShareOpen(true)}>
+                <Share2 className="h-4 w-4 mr-2" /> Share
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onDelete} className="text-destructive">
                 <Trash2 className="h-4 w-4 mr-2" /> Delete
               </DropdownMenuItem>
@@ -112,6 +118,9 @@ export function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onIncre
             <Download className="h-3.5 w-3.5" />
           </Button>
         </div>
+      </div>
+      <div onClick={(e) => e.stopPropagation()}>
+        <SharePromptDialog open={shareOpen} onOpenChange={setShareOpen} prompt={prompt} />
       </div>
     </div>
   );
